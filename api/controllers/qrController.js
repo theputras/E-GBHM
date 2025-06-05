@@ -8,26 +8,32 @@ async function generateQR(req, res) {
   const userId = req.user.id;
   
   if (!userId) return res.status(401).json({ message: 'User tidak dikenali.' });
-
+console.log('[DEBUG] Decoded token:', userId);
   try {
     // Cek apakah ada QR yang belum digunakan dan masih aktif
-    const existingResult = await db.query(`
+      const existingResult = await db.query(`
       SELECT * FROM qr_session 
-      WHERE user_id = $1 AND expired_at > NOW() AND used = false
+      WHERE user_id = $1 AND expired_at > NOW() AND used = false AND is_active = true
       LIMIT 1
     `, [userId]);
 
     const existingQR = existingResult.rows[0];
 
     // Jika ada QR aktif dan belum digunakan
-    if (existingQR) {
-      return res.status(200).json({ qr: existingQR.id_qr, status: 'existing' });
-    }
+if (existingQR) {
+  return res.status(200).json({ 
+    qr: existingQR.id_qr,
+    status: 'existing',
+    used: existingQR.used,
+    is_active: existingQR.is_active
+  });
+}
+
 
     // Generate token QR baru
     const expiredAt = new Date(Date.now() + 5 * 60 * 1000); // sekarang + 5 menit
     const payload = { user_id: userId, timestamp: Date.now() };
-    const token = jwt.sign(payload, JWT_SECRET, { expiresIn: '5m' });
+    const token = jwt.sign(payload, JWT_SECRET, { expiresIn: '24h' });
 
     // Simpan token ke database
     await db.query(
@@ -83,36 +89,62 @@ async function generateQR(req, res) {
 const verifyQR = async (req, res) => {
   try {
     const token = req.body.qr;
-    const userId = req.user.id; // Ambil dari middleware
+    // const loginUserId = req.user.id; // dari token login
+  
 
-    if (!userId) {
-      return res.status(401).json({ message: 'User tidak dikenali.' });
+
+    if (!token) {
+      return res.status(400).json({ message: 'Token QR tidak ditemukan dalam permintaan.' });
     }
 
-    const decoded = jwt.verify(token, JWT_SECRET);
-    const result = await pool.query(
-      'SELECT * FROM qr_session WHERE token = $1 AND id_mahasiswa = $2',
-      [token, userId]
-    );
+  
+    let decoded;
+    try {
+      decoded = jwt.verify(token, JWT_SECRET);
+    } catch (err) {
+      return res.status(403).json({ message: 'QR tidak valid atau sudah kadaluarsa.' });
+    }
+
+    const userIdFromQR = decoded.user_id;
+   if (!userIdFromQR) {
+  return res.status(400).json({ message: 'Token QR tidak valid, user_id tidak ditemukan.' });
+}
+
+const result = await db.query(
+  'SELECT * FROM qr_session WHERE id_qr = $1 AND user_id = $2',
+  [token, userIdFromQR]
+);
 
     if (result.rows.length === 0) {
-      return res.status(404).json({ message: 'QR tidak valid atau bukan milik user.' });
+      return res.status(404).json({ message: 'QR tidak valid atau tidak ditemukan.' });
     }
 
-    // Cek expired
     const qr = result.rows[0];
     const now = new Date();
+
     if (qr.expired_at && new Date(qr.expired_at) < now) {
       return res.status(400).json({ message: 'QR sudah kadaluarsa.' });
     }
 
-    res.json({ message: 'QR berhasil diverifikasi', data: qr });
+    if (qr.used === true) {
+      return res.status(400).json({ message: 'QR sudah pernah digunakan.' });
+    }
 
-  } catch (error) {
-    console.error("Verifikasi QR Error:", error);
-    res.status(500).json({ message: 'Gagal verifikasi QR' });
+    // Update status QR sebagai sudah digunakan
+    await db.query(
+      `UPDATE qr_session SET used = TRUE, is_active = FALSE WHERE id_qr = $1`,
+      [token]
+    );
+
+    return res.status(200).json({ message: 'QR berhasil diverifikasi dan telah ditandai sebagai digunakan.', data: qr });
+
+  } catch (err) {
+    console.error("Verifikasi QR Error:", err);
+    return res.status(500).json({ message: 'Gagal verifikasi QR' });
   }
 };
+
+
 
 
 module.exports = {

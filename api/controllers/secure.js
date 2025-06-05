@@ -59,7 +59,7 @@ async function authenticateTokenWithSession(req, res, next) {
   try {
     const decoded = jwt.verify(token, JWT_SECRET); // <- ini perlu
     req.user = { id: decoded.id }; // <- penting, agar tersedia di controller
-console.log('[DEBUG] Decoded token:', decoded);
+// console.log('[DEBUG] Decoded token:', decoded);
     const tokenSignature = token.split('.')[2];
     const result = await db.query('SELECT is_active FROM user_logs WHERE id = $1 LIMIT 1', [tokenSignature]);
     
@@ -76,7 +76,7 @@ console.log('[DEBUG] Decoded token:', decoded);
 }
 
 module.exports = {
-  JWT_SECRET,
+  JWT_SECRET: process.env.JWT_SECRET,
   authenticateToken,
   authenticateTokenWithSession,
   verifyToken

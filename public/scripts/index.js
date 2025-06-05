@@ -26,8 +26,17 @@ const items = document.querySelectorAll(".nav-item");
 const itemsQR = document.querySelectorAll(".nav-item-QR");
 document.addEventListener('DOMContentLoaded', function() {
 
-    window.addEventListener('resize', checkScreenSize); // Call checkScreenSize on page load
+    // window.addEventListener('resize', checkScreenSize); // Call checkScreenSize on page load
     // generateQRCodesFromCSV();
+  window.addEventListener('resize', checkScreenSize);
+  
+  const mediaQuery = window.matchMedia("(max-width: 1024px)");
+  mediaQuery.addEventListener("change", () => {
+    console.log("[DEBUG] Media query triggered!");
+    checkScreenSize();
+  });
+
+  checkScreenSize(); // Panggil saat load awal
 
   
     
@@ -214,17 +223,17 @@ let qrHandled = false;
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${localStorage.getItem('jwtToken')}`
+        'Authorization': `Bearer ${localStorage.getItem('token')}`
       },
       body: JSON.stringify({ qr: data })
     })
     .then(response => response.json())
     .then(result => {
-      if (result.success) {
-        alert('QR Code berhasil diproses!');
-        console.log(result.message);
+   if (result.message?.includes('berhasil diverifikasi')) {
+        alert('✅ QR sudah di scan!');
+        stopCamera(); // stop kamera agar tidak scan ulang
       } else {
-        alert('QR Code tidak valid atau gagal diproses.');
+        alert(result.message || 'QR Code tidak valid atau gagal diproses.');
       }
     })
     .catch(err => {
@@ -328,6 +337,7 @@ lastActivePage = 'scan';
 });
 
 function backScanner() {
+lastActivePage = 'home';
 stopCamera();
   setActiveNavHomeItem(homeBtn);
         
@@ -694,7 +704,7 @@ if (log.is_active) {
 tr.appendChild(tdStatus);
 tbody.appendChild(tr);
 
-        console.log('log object:', log);
+        // console.log('log object:', log);
 
     });
     
@@ -801,7 +811,7 @@ updateLoginHistory();
 //     });
 // }
 
-async function generateAndDisplayQRCode() {
+async function generateAndDisplayQRCode(forceNew = false) {
   
   // console.log('[DEBUG] Token JWT:', token);
 
@@ -825,6 +835,14 @@ async function generateAndDisplayQRCode() {
     }
 
     const responseData = await response.json(); // ambil data response JSON
+    
+        // Jika QR lama dan sudah tidak aktif/terpakai, minta QR baru
+    if (!forceNew && responseData.status === 'existing' && (!responseData.is_active || responseData.used)) {
+      console.log('[DEBUG] QR lama sudah tidak aktif/terpakai, meminta QR baru...');
+      return generateAndDisplayQRCode(true); // re-call pakai forceNew
+    }
+    
+    
     // console.log('[DEBUG] Response Data:', responseData);
     const qrCodeData = responseData.qr; // pastikan server mengembalikan properti ini
     // console.log('[DEBUG] QR Code Data:', qrCodeData);
@@ -848,7 +866,10 @@ async function generateAndDisplayQRCode() {
 
 function checkScreenSize() {
   const width = window.innerWidth;
-
+  const height = window.innerHeight;
+  // console.log("[DEBUG] Window Width:", width);
+  // console.log("[DEBUG] Window Height:", height);
+  // console.log("[DEBUG] Last Active Page:", lastActivePage);
   if (width >= 1024) {
     document.getElementById("mobile-warning").classList.remove("hidden");
     document.getElementById("dashboard-content").classList.add("hidden");
@@ -859,8 +880,13 @@ function checkScreenSize() {
   } else {
     document.getElementById("mobile-warning").classList.add("hidden");
 
+    // Pastikan semuanya disiapkan dulu
+    dashboardContent.classList.add("hidden");
+    scanContent.classList.add("hidden");
+    profileContent.classList.add("hidden");
+
     // Tampilkan halaman sesuai lastActivePage
- if (lastActivePage === 'home') {
+    if (lastActivePage === 'home') {
       handleNavigation(dashboardContent, [scanContent, profileContent]);
       document.getElementById("bottom-nav").classList.remove("hidden");
       document.getElementById("scan-nav").classList.add("hidden");
@@ -877,5 +903,6 @@ function checkScreenSize() {
     }
   }
 }
+
 
 

@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard E-GBHM</title>
+    <script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://code.iconify.design/iconify-icon/3.0.0/iconify-icon.min.js"></script>
+    <!-- jsQR library for QR scanning -->
+    <script src="https://cdn.jsdelivr.net/npm/jsqr/dist/jsQR.js"></script>
+     <!-- PapaParse library for parsing CSV files -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
+
+       <!-- Link to the external JavaScript file -->
+    <script src="./scripts/index.js" defer></script>
+    <style>
+        .mobile-warning {
+            display: none;
+        }
+        .dashboard-content {
+            display: block;
+        }
+          .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            background-color: #000;
+            padding: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 1000;
+        }
+    </style>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: {
+          100: "#657C6A",
+          80: "#708876",
+          60: "#8A9F8F",
+          40: "#A2B5A5",
+        },
+        secondary: {
+          100: "#A2B9A7",
+          80: "#C2D0C3",
+          60: "#D0DBD0",
+          40: "#DEE5DD",
+        },
+        failed: {
+          100: "#B71C1C",
+          80: "#C54949",
+          60: "#D47777",
+          40: "#E2A4A4",
+        },
+        pending: {
+          100: "#F9A825",
+          80: "#FAB951",
+          60: "#FBCB7C",
+          40: "#FDDCA8",
+        },
+        success: {
+          100: "#388E3C",
+          80: "#60A563",
+          60: "#88B88A",
+          40: "#AFD2B1",
+        },
+        base: {
+          100: "#000000",
+          80: "#979797",
+          60: "#A0A0A2",
+          40: "#A8A8A9",
+          0: "#FFFFFF",
+        },
+        body : {
+        100 : "#262626"
+        }
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-body-100 h-10 text-white" >
+    
+    <!-- Mobile Warning -->
+    <div id="mobile-warning" class="hidden mobile-warning flex justify-center items-center h-screen text-3xl text-failed-100">
+        <p>Pakailah HP untuk tampilan yang lebih baik</p>
+    </div>
+
+    <!-- Dashboard Content -->
+    <main id="dashboard-content" class="flex flex-col pb-20 overflow-y-auto min-h-screen">
+
+        <!-- Navbar -->
+        <div class="mt-4 py-4 px-6 text-left ml-4">
+            <h1 class="text-2xl font-semibold">Dashboard E-GBHM</h1>
+        </div>
+<!-- Greetings -->
+<div id="greeting" class="ml-4 text-lg font-semibold px-6 py-4 text-white">
+  <!-- Akan diisi dengan JS -->
+</div>
+        <!-- Dashboard Content -->
+        <div class="flex flex-col gap-4 px-4 py-6">
+
+            <!-- Statistik Sections -->
+            <div class="p-4 rounded-md shadow-md">
+                <p class="font-semibold">Statistik</p>
+                <div class="bg-gray-600 h-32 mt-2 rounded-md"></div>
+            </div>
+
+            <div class="p-4 rounded-md shadow-md">
+                <p class="font-semibold">Statistik</p>
+                <div class="bg-gray-600 h-32 mt-2 rounded-md"></div>
+            </div>
+
+            <!-- Historian Section -->
+            <div class="p-4 rounded-md shadow-md">
+                <p class="font-semibold">Histori Pesan</p>
+                <div class="bg-gray-600 h-32 mt-2 rounded-md"></div>
+            </div>
+
+        </div>
+
+        
+    </main> 
+    
+    <!-- Scan Content -->
+    <main id="scan-content" class="bg-body-100 hidden fixed inset-0 overflow-hidden z-50 ">
+        
+        <div id="scanQrContent">
+            
+            <div id="qrDataDisplay" class="hidden w-full h-screen bg-white flex justify-center items-center">
+                <!-- Scanned QR Code Data will appear here -->
+                <div class="bg-gray-100 p-4 rounded-lg shadow-lg w-1/2 h-1/2 flex justify-center items-center">
+                    <p id="scannedData" class="text-center font-semibold">No QR Code Scanned Yet</p>
+                </div>
+            </div>
+            <!-- Full Camera View -->
+            <div class="camera-container w-full h-full bg-black">
+                <video id="video" class="w-full h-full object-cover absolute top-0 left-0" autoplay></video>
+                
+                <!-- Scanner Overlay -->
+                <div id="scanner-overlay" class="hidden scanner-overlay absolute w-64 h-64 top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 border-4 border-white rounded-lg">
+                    <!-- This can be a QR scan area -->
+                </div>
+            </div>
+            <!-- Navbar -->
+            
+            
+             <div class="hidden absolute mt-4 py-4 px-6 text-left ml-4 flex items-left z-50 space-x-2" id="backBtn">
+             <!-- Back Icon -->
+            <iconify-icon icon="weui:back-filled" class="text-white cursor-pointer mr-4" width="24" height="24"></iconify-icon>
+                <h1 class="text-2xl font-semibold" id="titleScan"></h1>
+            </div>
+        
+        </div>
+        
+        <!-- QR Code Data Show Section -->
+<!-- QR Code Data Show Section -->
+<!-- QR Code Data Show Section -->
+<div id="showQrContent" class="hidden w-full h-screen flex flex-col justify-between">
+
+
+ <div class="hidden mt-4 py-4 px-6 text-left ml-4 flex items-left z-10" id="backBtnScan">
+             <!-- Back Icon -->
+            <iconify-icon icon="weui:back-filled" class="text-white cursor-pointer mr-4" width="24" height="24"></iconify-icon>
+                <h1 class="text-2xl font-semibold" id="titleShow"></h1>
+            </div>
+
+
+    <!-- QR Code Container (Centered and 1:1 Aspect Ratio) -->
+    <div class="flex justify-center items-center">
+        <div id="qrCodeContainer" class="w-48 h-48 flex justify-center items-center">
+            <!-- QR Code will be generated here -->
+        </div>
+    </div>
+
+    <!-- Text Below QR Code -->
+    <div class="w-full flex justify-center mb-6">
+        <p id="scannedData" class="text-center font-semibold text-white">No QR Code Scanned Yet</p>
+    </div>
+</div>
+
+
+
+        
+
+        
+
+
+  <!-- Scan Bottom Navigation -->
+<nav id="scan-nav" class="hidden fixed bottom-0 left-0 right-0 flex justify-between items-center">
+    <ul class="w-full flex justify-between items-center ml-3 mr-3">
+        <!-- Scan Button -->
+        <li class="nav-item-QR max-w-20 text-base-0 flex flex-col items-center w-full p-2 rounded-t-lg cursor-pointer active" id="scanQr">
+            <iconify-icon icon="lucide:scan" height="23"></iconify-icon>
+            <p>Scan</p>
+        </li>
+
+        <!-- Profile Button -->
+        <li class="nav-item-QR max-w-20 text-base-0 flex flex-col items-center w-full p-2 rounded-t-lg cursor-pointer" id="showQr">
+            <iconify-icon icon="lucide:qr-code" height="23"></iconify-icon>
+            <p>Barcode</p>
+        </li>
+    </ul>
+</nav>
+        
+    </main>
+    
+    <!-- Profile Content -->
+<main id="profile-content" class="hidden flex flex-col overflow-y-auto min-h-screen pb-20">
+
+  <!-- Navbar -->
+        <div class="mt-4 py-4 px-6 text-left ml-4">
+            <h1 class="text-2xl font-semibold">Profile E-GBHM</h1>
+        </div>
+  <div class="flex flex-col items-center w-full px-4 py-6"> 
+  
+      <!-- Avatar -->
+      <div class="w-24 h-24 items-center rounded-full bg-base-60 mb-4"></div>
+      <h2 class="text-lg font-bold mb-6" id="profileName">Nama Mahasiswa</h2>
+    
+      <!-- Box: Profile Pengguna -->
+      <div class="w-11/12 max-w-md bg-base-40 rounded-md p-4 mb-4">
+        <p class="text-sm font-semibold mb-2">Profile Pengguna</p>
+        <div class="bg-base-0 text-base-100 p-2 rounded text-sm" id="profileDetails">
+          <!-- Info profil akan dimasukkan di sini -->
+        </div>
+      </div>
+    
+      <!-- Box: History Login -->
+      <div class="p-4 rounded-md shadow-md w-[90%] sm:max-w-[90%]">
+       <p class="font-semibold">History Login</p>
+        <div class="overflow-x-auto mt-6 bg-gray-100 dark:bg-gray-800 text-base-100 p-2 rounded text-sm">
+    <table class="table-auto w-full border border-gray-200 dark:border-gray-700 text-sm text-white">
+      <thead class="bg-primary-60">
+        <tr>
+                  <th class="px-4 py-2">#</th>
+        <th class="px-4 py-2">Waktu Login</th>
+        <th class="px-4 py-2">Waktu Logout</th>
+        <th class="px-4 py-2">IP Address</th>
+        <th class="px-4 py-2">Perangkat</th>
+        <th class="px-4 py-2">Status</th>
+        </tr>
+      </thead>
+      <tbody id="loginHistoryBody"></tbody>
+    </table>
+  
+    
+  </div>
+  
+  <div class="flex justify-between items-center mt-4">
+      <button id="prevPage" class="bg-blue-500 text-white px-3 py-1 rounded disabled:opacity-50">Sebelumnya</button>
+      <span id="pageInfo" class="text-gray-700 dark:text-gray-300">Halaman 1</span>
+      <button id="nextPage" class="bg-blue-500 text-white px-3 py-1 rounded disabled:opacity-50">Berikutnya</button>
+    </div>
+      </div>
+      
+      <button id="logoutBtn" class="bg-failed-100 text-base-0 p-4 rounded-md mt-6  flex justify-center items-center">Logout</button>
+      <button id="logoutAllDeviceBtn" class="bg-primary-80 text-base-0 p-4 rounded-md mt-6  flex justify-center items-center">Logout Semua Perangkat</button>
+      
+      
+  
+  </div>
+
+</main>
+
+    
+    <!-- Bottom Navigation -->
+<nav id="bottom-nav" class="bottom-nav bg-primary-60 fixed bottom-0 left-0 right-0 flex justify-between items-center">
+    <ul class="w-full flex justify-between items-center ml-3 mr-3">
+        <!-- Home Button -->
+        <li class="nav-item max-w-20 text-base-0 flex flex-col items-center w-full p-2 rounded-lg cursor-pointer active" id="homeBtn">
+            <iconify-icon icon="mynaui:home" height="25"></iconify-icon>
+            <p class="text-[12px]">Home</p>
+        </li>
+
+        <!-- Scan Button -->
+        <li class="max-w-20 text-base-0 flex flex-col items-center w-full p-2 rounded-lg cursor-pointer" id="scanBtn">
+            <iconify-icon icon="lucide:scan" height="25"></iconify-icon>
+            <p class="text-[12px]">Scan</p>
+        </li>
+
+        <!-- Profile Button -->
+        <li class="nav-item max-w-20 text-base-0 flex flex-col items-center w-full p-2 rounded-lg cursor-pointer" id="profileBtn">
+            <iconify-icon icon="mingcute:user-4-fill" height="25"></iconify-icon>
+            <p class="text-[12px]">Profile</p>
+        </li>
+    </ul>
+</nav>
+
+
+
+
+  
+
+</body>
+</html>

@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Form Login</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <script src="./scripts/login.js" defer></script>
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            primary: {
+              100: "#657C6A",
+              80: "#708876",
+              60: "#8A9F8F",
+              40: "#A2B5A5",
+            },
+            secondary: {
+              100: "#A2B9A7",
+              80: "#C2D0C3",
+              60: "#D0DBD0",
+              40: "#DEE5DD",
+            },
+            failed: {
+              100: "#B71C1C",
+              80: "#C54949",
+              60: "#D47777",
+              40: "#E2A4A4",
+            },
+            pending: {
+              100: "#F9A825",
+              80: "#FAB951",
+              60: "#FBCB7C",
+              40: "#FDDCA8",
+            },
+            success: {
+              100: "#388E3C",
+              80: "#60A563",
+              60: "#88B88A",
+              40: "#AFD2B1",
+            },
+            base: {
+              100: "#000000",
+              80: "#979797",
+              60: "#A0A0A2",
+              40: "#A8A8A9",
+              0: "#FFFFFF",
+            },
+            body: {
+              100: "#262626",
+            }
+          }
+        }
+      }
+    }
+  </script>
+</head>
+<body class="bg-body-100 flex items-center justify-center min-h-screen">
+  <div class="bg-base-0 p-8 rounded-lg shadow-md w-[90%] sm:max-w-md">
+    <h2 class="text-2xl font-bold text-primary-100 mb-6 text-center">Login E-GBHM</h2>
+
+   <!-- ✅ FORM 1: CEK NIM -->
+<form id="nimForm" class="mb-4">
+  <label for="nim" class="block text-black">NIM</label>
+  <input type="text" id="nim" name="nim" class="w-full p-2 rounded text-black shadow-md" required placeholder="Masukkan NIM Anda">
+  <button type="submit" id="checkNim" class="mt-2 bg-primary-100 text-white px-4 py-2 rounded">Lanjut</button>
+</form>
+
+<!-- ✅ FORM 2: MASUKKAN PASSWORD (Tersembunyi dulu) -->
+<form id="passwordForm" class="mb-4 hidden">
+  <label for="password" class="block text-black">Password</label>
+  <div class="relative">
+    <input type="password" id="password" name="password" class="w-full p-2 rounded text-black shadow-md" required>
+    <button type="button" id="togglePassword" class="absolute right-2 top-2 text-sm text-primary-60">Show</button>
+  </div>
+  <button type="submit" id="loginBtn" class="mt-2 bg-primary-100 text-white px-4 py-2 rounded ">Login</button>
+</form>
+
+<!-- ✅ TOMBOL BUAT PASSWORD (Tersembunyi dulu) -->
+<button id="makePasswordBtn" class="hidden bg-pending-100 text-white px-4 py-2 rounded">Buat Password</button>
+
+  </div>
+
+
+</body>
+</html>

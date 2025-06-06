@@ -55,7 +55,7 @@ async function login(req, res) {
       jurusan: mahasiswa.jurusan,
     }, JWT_SECRET, { expiresIn: '24h' });
 
-    const ip = req.Address || req.ip || req.connection.remoteAddress;
+    const ip = req.ip;
     const device = req.get('User-Agent');
     req.session.mahasiswa = {
       id: mahasiswa.id_mahasiswa,

@@ -9,11 +9,12 @@ const session = require('express-session');
 const port = process.env.PORT || 3000;
 
 const { checkNIM, login, getLoginHistory, logout, logoutTableHistoryUser, logoutAllDevices  } = require('./controllers/loginController');
-const { generateQR, verifyQR } = require('./controllers/qrController');
+const { generateQR, verifyQR, getQRScannedBy } = require('./controllers/qrController');
 const { authenticateToken, authenticateTokenWithSession } = require('./controllers/secure');
 
 
 const app = express();
+app.set('trust proxy', true); // 🟢 PENTING! Tambahkan ini untuk baca IP dari reverse proxy
 app.use(cors());
 app.use(express.json());
 app.use(express.static(path.join(__dirname, '../public')));
@@ -35,11 +36,11 @@ app.use(session({
 }));
 
 // Define the path to the SSL certificate files (use absolute paths based on your system)
-const options = {
-    key: fs.readFileSync(path.join('C:', 'laragon', 'etc', 'ssl', 'laragon.key')),  // Private Key
-    cert: fs.readFileSync(path.join('C:', 'laragon', 'etc', 'ssl', 'laragon.crt')),  // Certificate
-    ca: fs.readFileSync(path.join('C:', 'laragon', 'etc', 'ssl', 'cacert.pem'))      // CA Certificate (optional)
-};
+// const options = {
+//     key: fs.readFileSync(path.join('C:', 'laragon', 'etc', 'ssl', 'laragon.key')),  // Private Key
+//     cert: fs.readFileSync(path.join('C:', 'laragon', 'etc', 'ssl', 'laragon.crt')),  // Certificate
+//     ca: fs.readFileSync(path.join('C:', 'laragon', 'etc', 'ssl', 'cacert.pem'))      // CA Certificate (optional)
+// };
 
 
 
@@ -72,6 +73,8 @@ app.post('/login-egbhm', login);
 app.get('/api/logs/:nim', getLoginHistory);
 app.get('/generate-qr', authenticateTokenWithSession, generateQR );
 app.post('/verify-qr', verifyQR);
+app.post('/qr-scanned-by', getQRScannedBy);
+
 app.post('/logout-egbhm', logout, authenticateTokenWithSession, (req, res) => {
   res.status(200).json({ message: 'User logged out' });
 });
@@ -87,12 +90,12 @@ app.post('/logout-all-devices', authenticateTokenWithSession, logoutAllDevices);
 
 
 // Start server normally (for local testing or Vercel)
-// app.listen(port, () => {
-//     console.log(`Server running on https://localhost:${port}`);
-// });
+app.listen(port, () => {
+    console.log(`Server running on https://localhost:${port}`);
+});
 
 // Start the HTTPS server
-https.createServer(options, app, port).listen(port, () => {
-console.log(`Server running on https://localhost:${port}`);
-});
+// https.createServer(options, app, port).listen(port, () => {
+// console.log(`Server running on https://localhost:${port}`);
+// });
 

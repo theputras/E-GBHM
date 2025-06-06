@@ -44,6 +44,14 @@ CREATE TABLE qr_session (
     used BOOLEAN DEFAULT FALSE,-- apakah token ini masih bisa dipakai
 );
 
+CREATE TABLE scan_logs (
+  id SERIAL PRIMARY KEY,
+  qr_id TEXT,
+  scanner_id TEXT,
+  scanned_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+
 ALTER TABLE qr_session
 ADD COLUMN used BOOLEAN DEFAULT FALSE;
 

@@ -211,7 +211,39 @@
         
     </main>
     
-    <!-- Profile Content -->
+    <!-- Verify ID Content -->
+<main id="verify-id-content" class="hidden flex flex-col overflow-y-auto min-h-screen pb-20">
+
+  <!-- Navbar -->
+        <div class="mt-4 py-4 px-6 text-left ml-4">
+            <h1 class="text-2xl font-semibold">Verify ID</h1>
+        </div>
+  <div class="flex flex-col items-center w-full px-4 py-6"> 
+  
+      <!-- Avatar -->
+      <div class="w-24 h-24 items-center rounded-full bg-base-60 mb-4"></div>
+      <h2 class="text-lg font-bold mb-6" id="verifyIDName">Nama Mahasiswa</h2>
+    
+      <!-- Box: Profile Pengguna -->
+      <div class="w-11/12 max-w-md bg-base-40 rounded-md p-4 mb-4">
+        <p class="text-sm font-semibold mb-2">Profile Pengguna</p>
+        <div class="bg-base-0 text-base-100 p-2 rounded text-sm" id="verifyIDDetails">
+          <!-- Info profil akan dimasukkan di sini -->
+        </div>
+      </div>
+    
+      
+      
+      <button id="yesVerifyID" class="bg-failed-100 text-base-0 p-4 rounded-md mt-6  flex justify-center items-center">Sudah Benul</button>
+      <button id="noVerifyID" class="bg-primary-80 text-base-0 p-4 rounded-md mt-6  flex justify-center items-center">Salah cuy, scan ulang</button>
+      
+      
+  
+  </div>
+
+</main>  
+
+<!-- Profile Content -->
 <main id="profile-content" class="hidden flex flex-col overflow-y-auto min-h-screen pb-20">
 
   <!-- Navbar -->

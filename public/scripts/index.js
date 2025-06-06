@@ -17,6 +17,9 @@ const backBtnScan = document.getElementById('backBtnScan');
     const profileBtn = document.getElementById('profileBtn');
 const profileContent = document.getElementById('profile-content');
 const logoutAllDeviceBtn = document.getElementById('logoutAllDeviceBtn'); // Tambahkan elemen logoutAllDeviceBtn
+const yesVerifyID = document.getElementById('yesVerifyID');
+const noVerifyID = document.getElementById('noVerifyID');
+const scannedData = document.getElementById('scannedData');
 
 const logoutBtn = document.getElementById('logoutBtn');
 const scannerOverlay = document.getElementById('scanner-overlay');
@@ -213,39 +216,51 @@ let qrHandled = false;
     
     // Handle scanned QR code data
     // Handle scanned QR code data
-  function handleQRCodeData(data) {
-  try {
-    // Tampilkan konten QR di console (debug)
-    console.log("Data QR Code:", data);
-
-    // Kirim data ke server untuk validasi atau simpan
-    fetch('/verify-qr', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${localStorage.getItem('token')}`
-      },
-      body: JSON.stringify({ qr: data })
-    })
-    .then(response => response.json())
-    .then(result => {
-   if (result.message?.includes('berhasil diverifikasi')) {
-        alert('✅ QR sudah di scan!');
-        stopCamera(); // stop kamera agar tidak scan ulang
-      } else {
-        alert(result.message || 'QR Code tidak valid atau gagal diproses.');
+    async function handleQRCodeData(data) {
+    
+    try {
+    
+        const response = await fetch("/verify-qr", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ qr: data })
+      });
+  
+      const result = await response.json();
+  
+      if (!response.ok) {
+        alert("QR tidak valid");
+          // Tambahan: jika QR tidak valid atau sudah digunakan → generate QR baru
+    
+  
+        return;
       }
-    })
-    .catch(err => {
-      console.error("Gagal mengirim data QR:", err);
-      alert('Terjadi kesalahan saat mengirim QR.');
-    });
+  
+      // QR Valid dan Data Ditemukan
+      // alert("QR sudah di-scan dan valid");
+  
+      // Sembunyikan scan-content, tampilkan verify-id-content
+      document.getElementById("scan-content").classList.add("hidden");
+      document.getElementById("verify-id-content").classList.remove("hidden");
+  scannedData.innerText = "Scan berhasil";
 
-  } catch (err) {
-    console.error("Handle QR Error:", err);
-    alert('QR tidak valid.');
+      // Tampilkan data profil dari result
+  document.getElementById("verifyIDName").innerText = result.nama;
+  document.getElementById("verifyIDDetails").innerHTML = `
+    <p><strong>NIM:</strong> ${result.user_id}</p>
+    <p><strong>Jurusan:</strong> ${result.jurusan}</p>`;
+  noVerifyID.addEventListener("click", () => {
+  handleNavigation(scanContent, [dashboardContent, bottomNav, profileContent, showQrContent], startScanner);
+});
+
+  
+    } catch (error) {
+      console.error("Gagal verifikasi QR:", error);
+      alert("Terjadi kesalahan saat memverifikasi QR.");
+    }
   }
-}
 
 
    
@@ -309,6 +324,7 @@ async function stopScanner() {
         // Stop the camera when going back to Home
         stopCamera();
         setActiveNavScanItem(showQr);
+        startSilentRefresh(); 
         generateAndDisplayQRCode();
 }
 // Event listener untuk tombol Scan (mulai scan QR)
@@ -480,6 +496,11 @@ logoutAllDeviceBtn.addEventListener('click', function () {
 
 // fungsi silent refresh untuk menjaga sesi tetap aktif
 function startSilentRefresh() {
+
+  setInterval(() => {
+    console.log('[AUTO] Refreshing QR...');
+    generateAndDisplayQRCode(true); // ⬅ hanya ini yang boleh regenerasi otomatis
+  }, 3000); // 3 detik misalnya
   setInterval(async () => {
     const token = localStorage.getItem('token');
     if (!token) {
@@ -812,6 +833,7 @@ updateLoginHistory();
 // }
 
 async function generateAndDisplayQRCode(forceNew = false) {
+//  console.log('[DEBUG] generateAndDisplayQRCode() dipanggil, forceNew:', forceNew);
   
   // console.log('[DEBUG] Token JWT:', token);
 
@@ -835,25 +857,46 @@ async function generateAndDisplayQRCode(forceNew = false) {
     }
 
     const responseData = await response.json(); // ambil data response JSON
-    
+    // console.log('[DEBUG] is_active:', responseData.qr);
         // Jika QR lama dan sudah tidak aktif/terpakai, minta QR baru
-    if (!forceNew && responseData.status === 'existing' && (!responseData.is_active || responseData.used)) {
-      console.log('[DEBUG] QR lama sudah tidak aktif/terpakai, meminta QR baru...');
-      return generateAndDisplayQRCode(true); // re-call pakai forceNew
-    }
+if (responseData.status === 'existing') {
+  // console.log('[DEBUG] QR status = existing');
+  // console.log('[DEBUG] used:', responseData.used);
+  // console.log('[DEBUG] is_active:', responseData.is_active);
+  // console.log('[DEBUG] is_active:', responseData.qr);
+
+  if (!forceNew && (!responseData.is_active || responseData.used)) {
+    // console.log('[DEBUG] Kondisi QR lama tidak valid → regenerate...');
+    return generateAndDisplayQRCode(true);
+  }
+
+  if (forceNew && (!responseData.is_active || responseData.used)) {
+    console.warn('[ABORT] Loop pembuatan QR dihentikan: QR baru tetap tidak valid.');
+    alert('Gagal mendapatkan QR baru yang valid. Silakan refresh halaman.');
+    return;
+  }
+}
+
     
     
     // console.log('[DEBUG] Response Data:', responseData);
     const qrCodeData = responseData.qr; // pastikan server mengembalikan properti ini
     // console.log('[DEBUG] QR Code Data:', qrCodeData);
 
-    const canvas = document.createElement('canvas');
-    QRCode.toCanvas(canvas, qrCodeData, { width: 300 }, function (error) {
-      if (error) console.error(error);
-      const qrContainer = document.getElementById('qrCodeContainer');
-      qrContainer.innerHTML = ''; // hapus QR sebelumnya
-      qrContainer.appendChild(canvas);
-    });
+  const canvas = document.createElement('canvas');
+QRCode.toCanvas(canvas, qrCodeData, { width: 300 }, function (error) {
+  if (error) console.error(error);
+
+  const qrContainer = document.getElementById('qrCodeContainer');
+qrContainer.innerHTML = ''; // selalu bersihkan QR lama
+  // [FIX] Tambahkan pengecekan untuk forceNew agar canvas benar-benar di-refresh
+  if (forceNew) {
+    // console.log('[DEBUG] ForceNew aktif: QR lama diganti');
+    qrContainer.innerHTML = ''; // hapus QR lama
+  }
+
+  qrContainer.appendChild(canvas); // tambahkan QR baru
+});
 
   } catch (err) {
     console.error('Error:', err);

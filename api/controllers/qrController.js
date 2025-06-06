@@ -164,7 +164,7 @@ const result = await db.query(
     await db.query(`
   INSERT INTO scan_logs (qr_id, scanner_id, scanned_at)
   VALUES ($1, $2, NOW())
-`, [token, req.user.id]); // req.user.id adalah yang scan
+`, [token, userId]); // req.user.id adalah yang scan
 
     const rows = mahasiswaSearch.rows; // ini array of rows
     

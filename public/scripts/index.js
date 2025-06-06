@@ -239,7 +239,7 @@ let qrHandled = false;
       }
   
       // QR Valid dan Data Ditemukan
-      // alert("QR sudah di-scan dan valid");
+      alert("QR sudah di-scan dan valid");
   
       // Sembunyikan scan-content, tampilkan verify-id-content
       document.getElementById("scan-content").classList.add("hidden");

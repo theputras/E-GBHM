@@ -496,11 +496,19 @@ logoutAllDeviceBtn.addEventListener('click', function () {
 
 // fungsi silent refresh untuk menjaga sesi tetap aktif
 function startSilentRefresh() {
+if (lastActivePage === 'scan') {
+  const refreshInterval = setInterval(() => {
+    const scanContentVisible = !scanContent.classList.contains('hidden');
+    if (scanContentVisible && lastActivePage === 'scan') {
+      console.log('[AUTO] Refreshing QR...');
+      generateAndDisplayQRCode(true);
+    } else {
+      // console.log('[AUTO] Halaman scan tidak aktif, hentikan auto-refresh');
+      clearInterval(refreshInterval);
+    }
+  }, 3000); // setiap 3 detik
+}
 
-  setInterval(() => {
-    console.log('[AUTO] Refreshing QR...');
-    generateAndDisplayQRCode(true); // ⬅ hanya ini yang boleh regenerasi otomatis
-  }, 3000); // 3 detik misalnya
   setInterval(async () => {
     const token = localStorage.getItem('token');
     if (!token) {

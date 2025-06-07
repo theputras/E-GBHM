@@ -4,6 +4,21 @@ Sistem verifikasi QR berbasis Node.js + PostgreSQL dengan fitur autentikasi, pem
 
 ---
 
+## 🧩 Apa Itu GBHM (Games, Bonding, and Healing Moment)?
+GBHM adalah salah satu rangkaian kegiatan non-formal dalam ospek (orientasi mahasiswa) yang dirancang untuk menciptakan suasana akrab, menyenangkan, dan suportif antara mahasiswa baru, panitia, dan kakak tingkat. Dalam GBHM, peserta diajak untuk bermain bersama, melakukan aktivitas yang membangun kerja sama, saling mengenal lebih dalam, dan berbagi cerita secara emosional.
+
+- Tujuan utama GBHM bukan hanya untuk bersenang-senang, tetapi juga untuk:
+
+- Menghilangkan ketegangan setelah aktivitas ospek yang padat.
+
+- Membangun koneksi emosional antar peserta dan panitia.
+
+- Menumbuhkan rasa percaya dan empati dalam kelompok.
+
+- Menjadikan ospek lebih bermakna dan berkesan.
+
+---
+
 ## 🚀 Fitur Utama
 
 - Login berbasis JWT
@@ -108,6 +123,22 @@ vercel --prod
 ```bash
 vercel
 ```
+## 📦 Dependencies
+
+| Module          | Fungsi Utama                            |
+| --------------- | --------------------------------------- |
+| `express`       | Web framework backend utama             |
+| `pg`            | Koneksi dan query ke PostgreSQL         |
+| `jsonwebtoken`  | Pembuatan & validasi JWT token          |
+| `dotenv`        | Mengatur konfigurasi environment (.env) |
+| `cors`          | Izin akses lintas domain (CORS policy)  |
+| `helmet`        | Proteksi header HTTP                    |
+| `morgan`        | Logging HTTP request di console         |
+| `cookie-parser` | Baca cookie dari browser                |
+| `uuid`          | Generator ID unik                       |
+| `qrcode`        | Membuat QR code berbasis data teks      |
+| `fs`, `https`   | Setup server HTTPS lokal                |
+
 
 ---
 

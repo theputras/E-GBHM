@@ -155,10 +155,19 @@ vercel
 ```
 
 ---
+### 🛡️ Keamanan
+
+- Token QR hanya berlaku 1x dan memiliki masa berlaku (expired_at).
+
+- QR ditandai used = true dan is_active = false setelah berhasil diverifikasi.
+
+- Hanya akun yang sedang login yang bisa memverifikasi QR (via bearer token).
+
+---
 
 ## 📦 Database
 
-Gunakan PostgreSQL. Struktur utama:
+Gunakan PostgreSQL. dengan Struktur utama:
 
 ### Tabel `mahasiswa`
 
@@ -194,11 +203,11 @@ Gunakan PostgreSQL. Struktur utama:
 
 ## 👨‍💻 Kontributor
 
-Made with ❤️ by tim E-GBHM.
-
+Made with ❤️ by tim E-GBHM THE PUTRAS.
+Pull request dan laporan bug sangat diterima. Silakan fork dan submit ide atau perbaikanmu!
 
 
 ---
 
-Kalau ada bagian tambahan seperti demo link, kontak developer, atau dokumentasi API yang ingin ditambahkan, tinggal bilang aja Borealis!
+Kalau ada bagian tambahan seperti demo link, kontak developer, atau dokumentasi API yang ingin ditambahkan, tinggal bilang aja!
 ```

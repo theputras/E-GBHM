@@ -57,213 +57,10 @@ document.addEventListener('DOMContentLoaded', function() {
   
   
   
- 
-  // showSection("dashboard-content"); // default visible
-  // window.addEventListener('resize', function () {
-//   if (!document.getElementById("mobile-warning").classList.contains('hidden')) {
-//     bottomNav.classList.add('hidden');
-//     scanNav.classList.add('hidden');
-//   } else {
-//     bottomNav.classList.remove('hidden');
-//     setActiveNavHomeItem(homeBtn);
-//     scanNav.classList.add('hidden');
-//   }
-// });
-
-// // Cek apakah sesi masih aktif di server
-// fetch('/check-session', {
-//   headers: { 'Authorization': `Bearer ${token}` }
-// })
-//   .then(res => {
-//     if (!res.ok) {
-//       localStorage.removeItem('token');
-//       location.reload(); // atau redirect langsung
-//       window.location.href = '/login';
-//     }
-//   })
-//   .catch(() => {
-//     localStorage.removeItem('token');
-//     window.location.href = '/login';
-//   });
-  
-    
-    
-    
-     const video = document.getElementById('video');
-    let videoStream;
-    // Function to start the camera
-//    function startCamera() {
-//     if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-//         // Constraints to request front camera
-//         const constraints = {
-//             video: { facingMode: "environment" } // "user" for front camera, "environment" for rear camera
-//         };
-
-//         navigator.mediaDevices.getUserMedia(constraints)
-//             .then(function (stream) {
-//                 videoStream = stream; // Store the video stream
-//                 video.srcObject = stream;
-//                 video.play();
-//             })
-//             .catch(function (err) {
-//                 console.log("Error accessing camera: ", err);
-//                 alert("Camera access is denied or not available.");
-//             });
-//     }
-// }
-
-async function startCamera() {
-  try {
-        const stream = await navigator.mediaDevices.getUserMedia({
-      video: { facingMode: { exact: "environment" } } // minta kamera belakang2
-    });
-    const video = document.getElementById('video'); // pastikan elemen ini ada
-    video.srcObject = stream;
-    await video.play(); // tunggu kamera benar-benar nyala
-    hasCameraPermission = true;
-    console.log('Camera started successfully');
-  } catch (err) {
-    hasCameraPermission = false;
-    alert('Gagal mengakses kamera: ' + err.message);
-    console.error('Camera access error:', err);
-  }
-}
-
-
-
-    // Function to stop the camera
-    function stopCamera() {
-        if (videoStream) {
-            videoStream.getTracks().forEach(track => track.stop()); // Stop all media tracks
-            console.log('Camera stopped');
-        }
-    }
-
-    // QR Code Scanning logic (using jsQR library)
-    const canvas = document.createElement("canvas");
-    const context = canvas.getContext("2d");
-
-
-function scanQRCode() {
-    if (video.readyState === video.HAVE_ENOUGH_DATA) {
-        
-        canvas.height = video.videoHeight;
-        canvas.width = video.videoWidth;
-        context.drawImage(video, 0, 0, canvas.width, canvas.height);
-
-        // Calculate overlay dimensions relative to video dimensions
-        const overlayRect = scannerOverlay.getBoundingClientRect();
-        const videoRect = video.getBoundingClientRect();
-
-        // Calculate scaling and positioning factors
-        const scaleX = canvas.width / videoRect.width;
-        const scaleY = canvas.height / videoRect.height;
-
-        // Compute overlay coordinates in video pixel space
-        const overlayStartX = Math.round((overlayRect.left - videoRect.left) * scaleX);
-        const overlayStartY = Math.round((overlayRect.top - videoRect.top) * scaleY);
-        const overlayWidth = Math.round(overlayRect.width * scaleX);
-        const overlayHeight = Math.round(overlayRect.height * scaleY);
-
-        // Extract image data only within the overlay region
-        const overlayImageData = context.getImageData(
-            overlayStartX, 
-            overlayStartY, 
-            overlayWidth, 
-            overlayHeight
-        );
-
-        const code = jsQR(overlayImageData.data, overlayWidth, overlayHeight, {
-            inversionAttempts: "dontInvert",
-        });
-
-        if (code) {
-            // Optional: Validate that the QR code is fully within the overlay
-            const qrCodeRect = {
-                left: code.location.topLeftCorner.x,
-                right: code.location.topRightCorner.x,
-                top: code.location.topLeftCorner.y,
-                bottom: code.location.bottomLeftCorner.y
-            };
-
-            const isFullyWithinOverlay = 
-                qrCodeRect.left >= 0 && 
-                qrCodeRect.right <= overlayWidth && 
-                qrCodeRect.top >= 0 && 
-                qrCodeRect.bottom <= overlayHeight;
-let qrHandled = false;
-            if (isFullyWithinOverlay) {
-            qrHandled = true;
-                // alert("QR Code detected: " + code.data);
-                handleQRCodeData(code.data)
-  .then(() => {
-    stopCamera();
-  })
-  .catch(err => {
-    console.error('QR processing error:', err);
-    qrHandled = false; // reset supaya bisa scan ulang
-  });
-
-                // startScanner();
-                // stopCamera(); // Optional: Stop camera after successful scan
-            }
-        }
-    }
-    requestAnimationFrame(scanQRCode); // Continue scanning
-}
 
     
     
-    // Handle scanned QR code data
-    // Handle scanned QR code data
-    async function handleQRCodeData(data) {
-    
-    try {
-    
-        const response = await fetch("/verify-qr", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({ qr: data })
-      });
-  
-      const result = await response.json();
-  
-      if (!response.ok) {
-        alert("QR tidak valid");
-          // Tambahan: jika QR tidak valid atau sudah digunakan → generate QR baru
-    
-  
-        return;
-      }
-  
-      // QR Valid dan Data Ditemukan
-      alert("QR sudah di-scan dan valid");
-  
-      // Sembunyikan scan-content, tampilkan verify-id-content
-      document.getElementById("scan-content").classList.add("hidden");
-      document.getElementById("verify-id-content").classList.remove("hidden");
-  scannedData.innerText = "Scan berhasil";
 
-      // Tampilkan data profil dari result
-  document.getElementById("verifyIDName").innerText = result.nama;
-  document.getElementById("verifyIDDetails").innerHTML = `
-    <p><strong>NIM:</strong> ${result.user_id}</p>
-    <p><strong>Jurusan:</strong> ${result.jurusan}</p>`;
-  noVerifyID.addEventListener("click", () => {
-  handleNavigation(scanContent, [dashboardContent, bottomNav, profileContent, showQrContent], startScanner);
-});
-
-  
-    } catch (error) {
-      console.error("Gagal verifikasi QR:", error);
-      alert("Terjadi kesalahan saat memverifikasi QR.");
-    }
-  }
-
-
-   
 
     
       // Automatically stop the camera when switching away from Scan Content
@@ -289,44 +86,10 @@ homeBtn.addEventListener('click', function () {
   document.getElementById("titleScan").textContent = "";
 });
 
-// Show QR Code Button Click to Go Back to Dashboard
-let hasCameraPermission = false;
-async function startScanner() {
-  scanQrContent.classList.remove('hidden');
-  showQrContent.classList.add('hidden');
-  scanNav.classList.remove('hidden');
-  scannerOverlay.classList.remove('hidden');
-  setActiveNavScanItem(scanQr);
-  backBtnScan.classList.add('hidden');
-  backBtn.classList.remove('hidden');
-
-  if (!hasCameraPermission) {
-    hasCameraPermission = true;
-    await startCamera(); // Tunggu kamera nyala
-  }
-
-  await scanQRCode(); // Baru mulai scan setelah kamera siap
-}
 
 
-async function stopScanner() {
-        scanContent.classList.remove('hidden');
-        scanNav.classList.remove('hidden');
-        scannerOverlay.classList.add('hidden'); // Show the scanner overlay
-        setActiveNavScanItem(showQr);
-        backBtnScan.classList.remove('hidden'); // Show the back button in scan mode
-        backBtn.classList.add('hidden'); // Hide the back button in home mode
-        // updateNavVisibility();
-        // Show the bottom navigation and hide the scan navigation
-        scanQrContent.classList.add('hidden');
-        showQrContent.classList.remove('hidden');
-        
-        // Stop the camera when going back to Home
-        stopCamera();
-        setActiveNavScanItem(showQr);
-        startSilentRefresh(); 
-        generateAndDisplayQRCode();
-}
+
+
 // Event listener untuk tombol Scan (mulai scan QR)
 scanBtn.addEventListener('click', function () {
   handleNavigation(scanContent, [dashboardContent, bottomNav, profileContent, showQrContent], startScanner);
@@ -352,14 +115,7 @@ lastActivePage = 'scan';
   document.getElementById("titleShow").textContent = "Show QR Code";
 });
 
-function backScanner() {
-lastActivePage = 'home';
-stopCamera();
-  setActiveNavHomeItem(homeBtn);
-        
-        bottomNav.classList.remove('hidden'); // Show the bottom navigation
-  
-}
+
 
 backBtn.addEventListener('click', function () {
     // Menampilkan dashboard, sembunyikan halaman lainnya
@@ -456,6 +212,207 @@ logoutAllDeviceBtn.addEventListener('click', function () {
 });
 
 // fungsi //
+
+
+// Function to start the camera
+const video = document.getElementById('video');
+    let videoStream;
+async function startCamera() {
+  try {
+        const stream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: { exact: "environment" } } // minta kamera belakang2
+    });
+    const video = document.getElementById('video'); // pastikan elemen ini ada
+    video.srcObject = stream;
+    await video.play(); // tunggu kamera benar-benar nyala
+    hasCameraPermission = true;
+    console.log('Camera started successfully');
+  } catch (err) {
+    hasCameraPermission = false;
+    alert('Gagal mengakses kamera: ' + err.message);
+    console.error('Camera access error:', err);
+  }
+}
+
+
+
+    // Function to stop the camera
+    function stopCamera() {
+        if (videoStream) {
+            videoStream.getTracks().forEach(track => track.stop()); // Stop all media tracks
+            console.log('Camera stopped');
+        }
+    }
+
+    // QR Code Scanning logic (using jsQR library)
+    const canvas = document.createElement("canvas");
+    const context = canvas.getContext("2d");
+
+// Function to scan QR Code from video stream
+function scanQRCode() {
+    if (video.readyState === video.HAVE_ENOUGH_DATA) {
+        
+        canvas.height = video.videoHeight;
+        canvas.width = video.videoWidth;
+        context.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+        // Calculate overlay dimensions relative to video dimensions
+        const overlayRect = scannerOverlay.getBoundingClientRect();
+        const videoRect = video.getBoundingClientRect();
+
+        // Calculate scaling and positioning factors
+        const scaleX = canvas.width / videoRect.width;
+        const scaleY = canvas.height / videoRect.height;
+
+        // Compute overlay coordinates in video pixel space
+        const overlayStartX = Math.round((overlayRect.left - videoRect.left) * scaleX);
+        const overlayStartY = Math.round((overlayRect.top - videoRect.top) * scaleY);
+        const overlayWidth = Math.round(overlayRect.width * scaleX);
+        const overlayHeight = Math.round(overlayRect.height * scaleY);
+
+        // Extract image data only within the overlay region
+        const overlayImageData = context.getImageData(
+            overlayStartX, 
+            overlayStartY, 
+            overlayWidth, 
+            overlayHeight
+        );
+
+        const code = jsQR(overlayImageData.data, overlayWidth, overlayHeight, {
+            inversionAttempts: "dontInvert",
+        });
+
+        if (code) {
+            // Optional: Validate that the QR code is fully within the overlay
+            const qrCodeRect = {
+                left: code.location.topLeftCorner.x,
+                right: code.location.topRightCorner.x,
+                top: code.location.topLeftCorner.y,
+                bottom: code.location.bottomLeftCorner.y
+            };
+
+            const isFullyWithinOverlay = 
+                qrCodeRect.left >= 0 && 
+                qrCodeRect.right <= overlayWidth && 
+                qrCodeRect.top >= 0 && 
+                qrCodeRect.bottom <= overlayHeight;
+let qrHandled = false;
+            if (isFullyWithinOverlay) {
+            qrHandled = true;
+                // alert("QR Code detected: " + code.data);
+                handleQRCodeData(code.data)
+  .then(() => {
+    stopCamera();
+  })
+  .catch(err => {
+    console.error('QR processing error:', err);
+    qrHandled = false; // reset supaya bisa scan ulang
+  });
+
+                // startScanner();
+                // stopCamera(); // Optional: Stop camera after successful scan
+            }
+        }
+    }
+    requestAnimationFrame(scanQRCode); // Continue scanning
+}
+
+
+// Handle scanned QR code data
+    async function handleQRCodeData(data) {
+    
+    try {
+    
+        const response = await fetch("/verify-qr", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ qr: data })
+      });
+  
+      const result = await response.json();
+  
+      if (!response.ok) {
+        alert("QR tidak valid");
+          // Tambahan: jika QR tidak valid atau sudah digunakan → generate QR baru
+    
+  
+        return;
+      }
+  
+      // QR Valid dan Data Ditemukan
+      alert("QR sudah di-scan dan valid");
+  
+      // Sembunyikan scan-content, tampilkan verify-id-content
+      document.getElementById("scan-content").classList.add("hidden");
+      document.getElementById("verify-id-content").classList.remove("hidden");
+  scannedData.innerText = "Scan berhasil";
+
+      // Tampilkan data profil dari result
+  document.getElementById("verifyIDName").innerText = result.nama;
+  document.getElementById("verifyIDDetails").innerHTML = `
+    <p><strong>NIM:</strong> ${result.user_id}</p>
+    <p><strong>Jurusan:</strong> ${result.jurusan}</p>`;
+  noVerifyID.addEventListener("click", () => {
+  handleNavigation(scanContent, [dashboardContent, bottomNav, profileContent, showQrContent], startScanner);
+});
+
+  
+    } catch (error) {
+      console.error("Gagal verifikasi QR:", error);
+      alert("Terjadi kesalahan saat memverifikasi QR.");
+    }
+  }
+
+// Function to go back to dashboard
+function backScanner() {
+lastActivePage = 'home';
+stopCamera();
+  setActiveNavHomeItem(homeBtn);
+        
+        bottomNav.classList.remove('hidden'); // Show the bottom navigation
+  
+}
+
+// Show QR Code Button Click to Go Back to Dashboard
+let hasCameraPermission = false;
+async function startScanner() {
+  scanQrContent.classList.remove('hidden');
+  showQrContent.classList.add('hidden');
+  scanNav.classList.remove('hidden');
+  scannerOverlay.classList.remove('hidden');
+  setActiveNavScanItem(scanQr);
+  backBtnScan.classList.add('hidden');
+  backBtn.classList.remove('hidden');
+
+  if (!hasCameraPermission) {
+    hasCameraPermission = true;
+    await startCamera(); // Tunggu kamera nyala
+  }
+
+  await scanQRCode(); // Baru mulai scan setelah kamera siap
+}
+
+// Function to stop the scanner
+async function stopScanner() {
+        scanContent.classList.remove('hidden');
+        scanNav.classList.remove('hidden');
+        scannerOverlay.classList.add('hidden'); // Show the scanner overlay
+        setActiveNavScanItem(showQr);
+        backBtnScan.classList.remove('hidden'); // Show the back button in scan mode
+        backBtn.classList.add('hidden'); // Hide the back button in home mode
+        // updateNavVisibility();
+        // Show the bottom navigation and hide the scan navigation
+        scanQrContent.classList.add('hidden');
+        showQrContent.classList.remove('hidden');
+        
+        // Stop the camera when going back to Home
+        stopCamera();
+        setActiveNavScanItem(showQr);
+        startSilentRefresh(); 
+        generateAndDisplayQRCode();
+}
 
  // Function to manage the active state based on the current content
     function setActiveNavHomeItem(activeBtn) {
@@ -595,7 +552,7 @@ function handleNavigation(pageToShow, pagesToHide = [], action = null) {
 //   }
 // }
 
-
+// Fungsi untuk menampilkan pesan selamat datang
 function grettingMessage() {
 if (token) {
   const payload = JSON.parse(atob(token.split('.')[1]));
@@ -797,6 +754,8 @@ console.log("Logout ID: ", logId);
     });
 }
 
+
+// Function to fetch and update login history
 async function fetchLoginHistory() {
 updateLoginHistory();
 }
@@ -840,6 +799,8 @@ updateLoginHistory();
 //     });
 // }
 
+
+// Function to generate and display QR Code
 async function generateAndDisplayQRCode(forceNew = false) {
 //  console.log('[DEBUG] generateAndDisplayQRCode() dipanggil, forceNew:', forceNew);
   
@@ -914,7 +875,7 @@ qrContainer.innerHTML = ''; // selalu bersihkan QR lama
 
 
 
-
+// Function untuk mengecek ukuran layar dan menyesuaikan tampilan
 function checkScreenSize() {
   const width = window.innerWidth;
   const height = window.innerHeight;

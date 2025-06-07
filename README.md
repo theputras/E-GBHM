@@ -32,7 +32,7 @@ Sistem verifikasi QR berbasis Node.js + PostgreSQL dengan fitur autentikasi, pem
 
 3. Buat file `.env` dan isikan:
 
-   ```env
+   ```bash
    JWT_SECRET=your_jwt_secret
    PGHOST=your_db_host
    PGUSER=your_db_user
@@ -41,7 +41,7 @@ Sistem verifikasi QR berbasis Node.js + PostgreSQL dengan fitur autentikasi, pem
    PGPORT=5432
    ```
 
----
+
 
 ## 🔐 Menjalankan HTTPS secara lokal
 

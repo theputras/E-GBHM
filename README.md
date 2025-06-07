@@ -22,7 +22,7 @@ Sistem verifikasi QR berbasis Node.js + PostgreSQL dengan fitur autentikasi, pem
    ```bash
    git clone https://github.com/username/E-GBHM.git
    cd E-GBHM
-````
+
 
 2. Install semua module:
 

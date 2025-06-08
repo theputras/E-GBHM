@@ -203,7 +203,7 @@ Gunakan PostgreSQL. dengan Struktur utama:
 
 ## 👨‍💻 Kontributor
 
-Made with ❤️ by tim E-GBHM THE PUTRAS. __[spasi][spasi]__\n
+Made with ❤️ by tim E-GBHM THE PUTRAS.
 Pull request dan laporan bug sangat diterima. Silakan fork dan submit ide atau perbaikanmu!
 
 

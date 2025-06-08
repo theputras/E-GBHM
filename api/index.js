@@ -57,11 +57,11 @@ app.use(session({
 }));
 
 // Define the path to the SSL certificate files (use absolute paths based on your system)
-// const options = {
-//     key: fs.readFileSync(path.join('C:', 'laragon', 'etc', 'ssl', 'laragon.key')),  // Private Key
-//     cert: fs.readFileSync(path.join('C:', 'laragon', 'etc', 'ssl', 'laragon.crt')),  // Certificate
-//     ca: fs.readFileSync(path.join('C:', 'laragon', 'etc', 'ssl', 'cacert.pem'))      // CA Certificate (optional)
-// };
+const options = {
+    key: fs.readFileSync(path.join('C:', 'laragon', 'etc', 'ssl', 'laragon.key')),  // Private Key
+    cert: fs.readFileSync(path.join('C:', 'laragon', 'etc', 'ssl', 'laragon.crt')),  // Certificate
+    ca: fs.readFileSync(path.join('C:', 'laragon', 'etc', 'ssl', 'cacert.pem'))      // CA Certificate (optional)
+};
 
 
 
@@ -111,12 +111,12 @@ app.post('/logout-all-devices', authenticateTokenWithSession, logoutAllDevices);
 
 
 // Start server normally (for local testing or Vercel)
-app.listen(port, () => {
-    console.log(`Server running on https://localhost:${port}`);
-});
+// app.listen(port, () => {
+//     console.log(`Server running on https://localhost:${port}`);
+// });
 
 // Start the HTTPS server
-// https.createServer(options, app, port).listen(port, () => {
-// console.log(`Server running on https://localhost:${port}`);
-// });
+https.createServer(options, app, port).listen(port, () => {
+console.log(`Server running on https://localhost:${port}`);
+});
 

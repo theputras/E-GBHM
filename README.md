@@ -213,8 +213,10 @@ Kalau ada bagian tambahan seperti demo link, kontak developer, atau dokumentasi 
 
 ## Link Demo
 ```
-https://e-gbhm.theputras.my.id/login
+https://e-gbhm.theputras.my.id
 ```
+
+Atau bisa klik link berikut:
 [https://e-gbhm.theputras.my.id](https://e-gbhm.theputras.my.id)
 
 

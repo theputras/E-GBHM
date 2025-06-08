@@ -163,28 +163,85 @@ vercel
 
 - Hanya akun yang sedang login yang bisa memverifikasi QR (via bearer token).
 
+
 ---
 
-## 📦 Database
+## 🧭 Navigasi Aplikasi
 
-Gunakan PostgreSQL. dengan Struktur utama:
+Aplikasi terdiri dari dua antarmuka utama:
 
-### Tabel `mahasiswa`
+* **Login Page (`/login`)**
 
-* `id_mahasiswa` (VARCHAR) – PRIMARY KEY
-* `nama`, `jurusan`
+  * Validasi NIM
+  * Cek apakah password sudah dibuat
+  * Form login dengan toggle password
+  * Deteksi browser (hanya Chrome, Firefox, Safari yang didukung)
 
-### Tabel `qr_session`
+* **Dashboard Page (`/`)**
 
-* `id_qr` (TEXT) – PRIMARY KEY
-* `user_id` (FK ke mahasiswa)
-* `created_at`, `expired_at`
-* `is_active` (BOOLEAN)
+  * Tampilkan salam pengguna
+  * Navigasi bawah: Home, Scan QR, Show QR, Profile
+  * Mode mobile responsif
+  * Deteksi ukuran layar dan orientasi
+  * Mode loading dan transisi antar halaman
 
-### Tabel `scan_logs`
+---
 
-* `id` SERIAL PRIMARY KEY
-* `qr_id`, `scanner_id`, `scanned_at`
+## 📱 Fitur Frontend
+
+| Fitur                    | Deskripsi                                                              |
+| ------------------------ | ---------------------------------------------------------------------- |
+| 🔐 Autentikasi Token     | Token login disimpan di `localStorage`, digunakan untuk semua endpoint |
+| 📸 Pemindaian QR Code    | Menggunakan kamera belakang untuk scan QR dengan `jsQR`                |
+| 📄 Menampilkan QR        | Menampilkan QR user aktif selama belum expired                         |
+| 👤 Profil                | Menampilkan data pengguna dan histori login                            |
+| 📜 Riwayat Login         | Ditandai session aktif (current), ditampilkan dalam table              |
+| ❌ Logout Semua Perangkat | Logout semua sesi aktif kecuali yang sekarang                          |
+| 🌐 Validasi Browser      | Akses dibatasi hanya ke Chrome, Firefox, atau Safari (untuk keamanan dan stabilitas aplikasi)  |
+
+---
+
+## ⚙️ Struktur Database Utama
+
+Gunakan PostgreSQL dengan tabel berikut:
+
+### `mahasiswa`
+
+| Kolom         | Tipe    | Keterangan           |
+| ------------- | ------- | -------------------- |
+| id\_mahasiswa | VARCHAR | Primary key          |
+| nama          | TEXT    | Nama lengkap         |
+| jurusan       | TEXT    | Jurusan mahasiswa    |
+| password      | TEXT    | Password terenkripsi |
+
+### `user_logs`
+
+| Kolom        | Tipe      | Keterangan                 |
+| ------------ | --------- | -------------------------- |
+| id           | TEXT      | Token signature (ID unik)  |
+| session\_id  | TEXT      | Session ID dari Express    |
+| user\_id     | VARCHAR   | Foreign key ke `mahasiswa` |
+| login\_time  | TIMESTAMP | Waktu login                |
+| logout\_time | TIMESTAMP | Waktu logout               |
+| is\_active   | BOOLEAN   | Status aktif/tidak         |
+
+### `qr_session`
+
+| Kolom       | Tipe      | Keterangan                  |
+| ----------- | --------- | --------------------------- |
+| id\_qr      | TEXT      | QR token (JWT)              |
+| user\_id    | VARCHAR   | Foreign key ke `mahasiswa`  |
+| expired\_at | TIMESTAMP | Batas waktu valid QR        |
+| is\_active  | BOOLEAN   | QR aktif atau sudah dipakai |
+
+### `scan_logs`
+
+| Kolom       | Tipe      | Keterangan                  |
+| ----------- | --------- | --------------------------- |
+| id          | SERIAL    | Auto increment              |
+| qr\_id      | TEXT      | Foreign key ke `qr_session` |
+| scanner\_id | VARCHAR   | ID mahasiswa yang scan QR   |
+| scanned\_at | TIMESTAMP | Waktu pemindaian            |
 
 ---
 
@@ -198,6 +255,22 @@ Gunakan PostgreSQL. dengan Struktur utama:
   POST /logout-all-devices
   Authorization: Bearer <your_token>
   ```
+  
+* Gunakan `.env` untuk menjaga keamanan token & database
+* Jangan upload `node_modules/` atau `.env` ke GitHub
+* Fitur kamera membutuhkan HTTPS dan izin browser
+
+---
+
+## 🧪 Testing UI
+
+Untuk pengujian frontend, buka halaman:
+
+```
+http://localhost:3000/testui
+```
+
+Di sini kamu bisa akses komponen visual seperti QR generator, scanner overlay, dan komponen navigasi.
 
 ---
 

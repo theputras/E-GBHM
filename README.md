@@ -245,6 +245,133 @@ Gunakan PostgreSQL dengan tabel berikut:
 
 ---
 
+
+## 📫 Testing Menggunakan Postman
+
+Untuk menguji API tanpa frontend, kamu bisa gunakan **Postman**:
+
+---
+
+### 1. ✅ Validasi NIM
+
+**Endpoint:**
+`POST /checkNIM`
+**Body (JSON):**
+
+```json
+{
+  "nim": "12345678901"
+}
+```
+
+---
+
+### 2. 🔐 Login Mahasiswa
+
+**Endpoint:**
+`POST /login-egbhm`
+**Body (JSON):**
+
+```json
+{
+  "nim": "12345678901",
+  "password": "passwordmu"
+}
+```
+
+**Response Sukses:**
+
+```json
+{
+  "status": "success",
+  "tokenlogin": "eyJhbGci...etc",
+  "session_id": "xxx",
+  "mahasiswa": {
+    "id": "12345678901",
+    "nama": "Nama Mahasiswa",
+    "jurusan": "Informatika"
+  }
+}
+```
+
+Simpan nilai `tokenlogin` untuk digunakan pada request berikutnya.
+
+---
+
+### 3. 📥 Generate QR
+
+**Endpoint:**
+`GET /generate-qr`
+**Header:**
+
+```
+Authorization: Bearer <tokenlogin>
+```
+
+---
+
+### 4. 📤 Verifikasi QR
+
+**Endpoint:**
+`POST /verify-qr`
+**Body (JSON):**
+
+```json
+{
+  "qr": "<token QR yang digenerate>"
+}
+```
+
+---
+
+### 5. 📜 Riwayat Login
+
+**Endpoint:**
+`GET /api/logs/:nim`
+**Header:**
+
+```
+Authorization: Bearer <tokenlogin>
+```
+
+Contoh:
+`GET /api/logs/12345678901`
+
+---
+
+### 6. 🔓 Logout Sesi Sekarang
+
+**Endpoint:**
+`POST /logout-egbhm`
+**Header:**
+
+```
+Authorization: Bearer <tokenlogin>
+```
+
+---
+
+### 7. 🔒 Logout dari Semua Perangkat
+
+**Endpoint:**
+`POST /logout-all-devices`
+**Header:**
+
+```
+Authorization: Bearer <tokenlogin>
+```
+
+---
+
+### 8. 🌐 Validasi Browser
+
+**Endpoint:**
+`GET /check-browser`
+
+> Digunakan untuk mengecek apakah browser klien didukung.
+
+---
+
 ## 📝 Catatan Tambahan
 
 * QR akan otomatis refresh di halaman scanner setiap 3 detik jika masih aktif.

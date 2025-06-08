@@ -1,4 +1,4 @@
-const token = localStorage.getItem('token');
+const tokenlogin = localStorage.getItem('tokenlogin');
 const greetingEl = document.getElementById("greeting");
 const scanContent = document.getElementById('scan-content');
 let lastActivePage = 'home'; // default 
@@ -21,6 +21,11 @@ const logoutAllDeviceBtn = document.getElementById('logoutAllDeviceBtn'); // Tam
 const yesVerifyID = document.getElementById('yesVerifyID');
 const noVerifyID = document.getElementById('noVerifyID');
 const scannedData = document.getElementById('scannedData');
+const browsercheck = document.getElementById('browser-check');
+const browserCheckText = browsercheck.querySelector('p');
+
+const mobilewarning = document.getElementById('mobile-warning');
+const loadingwaiting = document.getElementById('loading-waiting');
 
 const logoutBtn = document.getElementById('logoutBtn');
 const scannerOverlay = document.getElementById('scanner-overlay');
@@ -28,7 +33,42 @@ const scannerOverlay = document.getElementById('scanner-overlay');
  // Select all navigation items
 const items = document.querySelectorAll(".nav-item");
 const itemsQR = document.querySelectorAll(".nav-item-QR");
+
+
+// Browser detection
+  const userAgent = navigator.userAgent;
+const isChrome = userAgent.includes("Chrome") && !userAgent.includes("Edg") && !userAgent.includes("OPR");
+const isFirefox = userAgent.includes("Firefox");
+const isSafari = userAgent.includes("Safari") && !userAgent.includes("Chrome") && !userAgent.includes("Chromium");
 document.addEventListener('DOMContentLoaded', function() {
+
+// Check browser support
+if (!(isChrome || isFirefox || isSafari)) {
+  lastActivePage = 'browser-check';
+  fetch("/check-browser")
+    .then(response => response.json())
+    .then(data => {
+      browsercheck.classList.remove('hidden');
+      browserCheckText.textContent = data.error;
+          dashboardContent.classList.add("hidden");
+    scanContent.classList.add("hidden");
+    profileContent.classList.add("hidden");
+    bottomNav.classList.add("hidden");
+    scanNav.classList.add("hidden");
+    logout();
+    })
+    .catch(err => {
+      browsercheck.classList.remove('hidden');
+          dashboardContent.classList.add("hidden");
+    scanContent.classList.add("hidden");
+    profileContent.classList.add("hidden");
+    bottomNav.classList.add("hidden");
+    scanNav.classList.add("hidden");
+    logout();
+      browserCheckText.textContent = `Terjadi kesalahan: ${err.message}`;
+    });
+}
+
 
     // window.addEventListener('resize', checkScreenSize); // Call checkScreenSize on page load
     // generateQRCodesFromCSV();
@@ -40,7 +80,38 @@ document.addEventListener('DOMContentLoaded', function() {
     checkScreenSize();
   });
   checkScreenSize();
+  
+  
+// Langsung munculin loading screen
+loadingwaiting.classList.remove("hidden");
 
+// Sembunyikan semua halaman utama sementara
+handleNavigation(loadingwaiting, [profileContent, dashboardContent, scanContent, bottomNav, scanNav], null, false, null);
+
+// Saat window selesai load
+window.addEventListener('load', () => {
+  const content = dashboardContent; // atau ganti dengan halaman lain yang mau ditampilkan
+  const hidePages = [profileContent, scanContent, scanNav];
+
+  // Step 1: Tunda 500ms sambil tetap menampilkan loading
+  setTimeout(() => {
+    // Step 2: Pindah ke konten utama
+    handleNavigation(content, hidePages, null, false, null);
+
+    // Step 3: Tambahkan class animasi (smooth masuknya)
+    content.classList.add('page-transition');
+    setTimeout(() => content.classList.add('show'), 10);
+
+    // Step 4: Sembunyikan loading setelah 100ms lagi
+    setTimeout(() => {
+      loadingwaiting.classList.add("hidden");
+      bottomNav.classList.remove("hidden"); // munculkan nav bar
+    }, 100); // boleh diatur lebih pendek agar tidak terasa "delay" panjang
+  }, 1000); // waktu tampil loadingwaiting sebelum pindah
+});
+
+
+    
   // checkScreenSize(); // Panggil saat load awal
   // misal: baca path untuk menentukan halaman aktif
   const path = window.location.pathname;
@@ -60,12 +131,12 @@ document.addEventListener('DOMContentLoaded', function() {
 
     
     // Jika token tidak ditemukan, langsung redirect ke login
-  if (!token) {
+  if (!tokenlogin) {
     window.location.href = '/login';
     return;
   }
   
-  if (token) {
+  if (tokenlogin) {
     startSilentRefresh();
   }
   
@@ -183,31 +254,7 @@ backBtnScan.addEventListener('click', function () {
 
 
 logoutBtn.addEventListener('click', function () {
-  fetch('/logout-egbhm', {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${token}`
-    }
-  })
-  .then(res => res.json())
-  .then(data => {
-    // Hapus token & redirect
-    localStorage.removeItem('token');
-     // Refresh halaman lalu redirect
-     setTimeout(() => {
-        location.reload(); // opsional, bisa dikomentari jika ingin efek langsung redirect
-      window.location.href = '/login';
-    }, 500); // kasih delay 500ms biar efek refresh terasa
-  })
-  .catch(err => {
-    console.error('Logout error:', err);
-    // Tetap hapus token dan redirect meskipun gagal update log
-    localStorage.removeItem('token');
-        location.reload();
-    setTimeout(() => {
-      window.location.href = '/login';
-    }, 500);
-  });
+btnlogout();
 });
 
 
@@ -215,7 +262,9 @@ logoutBtn.addEventListener('click', function () {
 
 profileBtn.addEventListener('click', function () {
     // Menampilkan dashboard, sembunyikan halaman lainnya
-    handleNavigation(profileContent, [dashboardContent, , scanContent, scanNav, profileContent], stopCamera, true, profileBtn);
+    handleNavigation(profileContent, [dashboardContent, scanContent, scanNav], stopCamera, true, profileBtn);
+
+console.log("[DEBUG] Setelah Navigation:", profileContent.classList);
       updateProfileDetailsFromToken();
     updateLoginHistory();
     // showSection("profile-content");
@@ -226,25 +275,54 @@ profileBtn.addEventListener('click', function () {
 
 
 logoutAllDeviceBtn.addEventListener('click', function () {
-  if (!confirm('Yakin ingin logout dari semua perangkat?')) return;
-
-  fetch('/logout-all-devices', {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${localStorage.getItem('token')}`
+  // if (!confirm('Yakin ingin logout dari semua perangkat?')) return;
+  Swal.fire({
+    title: 'Yakin ingin logout semua device?',
+    icon: 'warning',
+    color: '#ffffff',
+    background: '#262626',
+    showCancelButton: true,
+    confirmButtonColor: '#d33',
+    cancelButtonColor: '#3085d6',
+    confirmButtonText: 'Logout',
+    cancelButtonText: 'Batal'
+  }).then((result) => {
+    if (result.isConfirmed) {
+      
+      fetch('/logout-all-devices', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${tokenlogin}`
+        }
+      })
+      .then(res => res.json())
+      .then(data => {
+        // alert(data.message);
+        Swal.fire({
+      title: 'Berhasil!',
+      text: data.message,
+      icon: 'success',
+      background: '#262626', // contoh warna latar bg-body-100 Tailwind
+      color: '#ffffff', // warna teks
+      customClass: {
+        title: 'text-white text-2xl',
+        popup: 'rounded-lg',
+        confirmButton: 'bg-primary-100 text-white hover:bg-primary-40',
+      }
+    });
+    
+        fetchLoginHistory(); // pastikan fungsi ini memuat ulang tabel
+        // localStorage.removeItem('tokenlogin');
+        // setTimeout(() => {
+        //   window.location.href = '/login';
+        // }, 2000);
+      })
+      .catch(err => {
+        logout();
+        console.error('Logout all error:', err);
+        alert('Gagal logout dari semua perangkat.');
+      });
     }
-  })
-  .then(res => res.json())
-  .then(data => {
-    alert(data.message);
-    localStorage.removeItem('token');
-    setTimeout(() => {
-      window.location.href = '/login';
-    }, 800);
-  })
-  .catch(err => {
-    console.error('Logout all error:', err);
-    alert('Gagal logout dari semua perangkat.');
   });
 });
 
@@ -253,6 +331,75 @@ logoutAllDeviceBtn.addEventListener('click', function () {
 });
 
 // fungsi //
+
+
+// Logout
+function logout() {
+
+ fetch('/logout-egbhm', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${tokenlogin}`
+    }
+  })
+  .then(res => res.json())
+  .then(data => {
+    // Hapus token & redirect
+    localStorage.removeItem('tokenlogin');
+     // Refresh halaman lalu redirect
+     setTimeout(() => {
+        location.reload(); // opsional, bisa dikomentari jika ingin efek langsung redirect
+      window.location.href = '/login';
+    }, 500); // kasih delay 500ms biar efek refresh terasa
+  })
+  .catch(err => {
+    console.error('Logout error:', err);
+    // Tetap hapus token dan redirect meskipun gagal update log
+    localStorage.removeItem('tokenlogin');
+        location.reload();
+    setTimeout(() => {
+      window.location.href = '/login';
+    }, 500);
+  });
+}
+function btnlogout() {
+  Swal.fire({
+    title: 'Yakin ingin logout?',
+    icon: 'warning',
+    color: '#ffffff',
+    background: '#262626',
+    showCancelButton: true,
+    confirmButtonColor: '#d33',
+    cancelButtonColor: '#3085d6',
+    confirmButtonText: 'Logout',
+    cancelButtonText: 'Batal'
+  }).then((result) => {
+    if (result.isConfirmed) {
+      fetch('/logout-egbhm', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${tokenlogin}`
+        }
+      })
+      .then(res => res.json())
+      .then(data => {
+        localStorage.removeItem('tokenlogin');
+        setTimeout(() => {
+          location.reload();
+          window.location.href = '/login';
+        }, 500);
+      })
+      .catch(err => {
+        console.error('Logout error:', err);
+        localStorage.removeItem('tokenlogin');
+        location.reload();
+        setTimeout(() => {
+          window.location.href = '/login';
+        }, 500);
+      });
+    }
+  });
+}
 
 
 // Function to start the camera
@@ -514,11 +661,13 @@ if (lastActivePage === 'scan') {
       clearInterval(refreshInterval);
     }
   }, 3000); // setiap 3 detik
+} else if (lastActivePage === 'profile') {
+fetchLoginHistory(); // pastikan fungsi ini memuat ulang tabel\
+console.log('[AUTO] Refreshing login history...');
 }
 
   setInterval(async () => {
-    const token = localStorage.getItem('token');
-    if (!token) {
+    if (!tokenlogin) {
       window.location.href = '/login';
       return;
     }
@@ -526,7 +675,7 @@ if (lastActivePage === 'scan') {
     try {
       const response = await fetch('/check-session', {
         headers: {
-          'Authorization': 'Bearer ' + token
+          'Authorization': 'Bearer ' + tokenlogin
         }
       });
 
@@ -535,13 +684,13 @@ if (lastActivePage === 'scan') {
 
       // Cek apakah session masih aktif
       if (result.message === 'Sesi telah berakhir, silakan login kembali.') {
-        localStorage.removeItem('token');
+        logout();
         window.location.href = '/login';
       }
 
     } catch (err) {
       console.error('Silent refresh failed:', err);
-      localStorage.removeItem('token');
+      logout();
       window.location.href = '/login';
     }
   }, 5000); // Setiap 5 detik
@@ -563,23 +712,7 @@ if (lastActivePage === 'scan') {
 
 
 // Fungsi untuk mengganti tampilan halaman
-function switchPage(showPage, hidePages = []) {
-    // Sembunyikan halaman-halaman lain
-    hidePages.forEach(page => page.classList.add('hidden'));
 
-    // Tampilkan halaman yang dipilih
-    showPage.classList.remove('hidden');
-}
-
-// Fungsi untuk menyembunyikan semua konten halaman
-function hideAllPages(pages) {
-  pages.forEach(page => page.classList.add('hidden'));
-}
-
-// Fungsi untuk menampilkan halaman tertentu
-function showPage(page) {
-  page.classList.remove('hidden');
-}
 
 // // Fungsi untuk menavigasi antara halaman
 // function handleNavigation(pageToShow, pagesToHide = [], action = null) {
@@ -629,9 +762,70 @@ function showPage(page) {
 
 
 
-function handleNavigation(pageToShow, pagesToHide = [], action = null, pushHistory = true, activeNavBtn = null) {
-  hideAllPages(pagesToHide);
-  showPage(pageToShow);
+// function handleNavigation(pageToShow = [], pagesToHide = [], action = null, pushHistory = true, activeNavBtn = null) {
+//   hideAllPages(pagesToHide);
+//   showPage(pageToShow);
+  
+// if (pageToShow.id === "dashboard-content" || pageToShow.id === "profile-content") {
+  
+//   bottomNav.classList.remove("opacity-0", "translate-y-4", "hidden");
+// }
+// if (pageToShow.id === "scan-content") {
+  
+//   scanNav.classList.remove("opacity-0", "translate-y-4", "hidden");
+// }
+
+
+//   if (action) action();
+
+//   if (pushHistory) {
+//     history.pushState({ page: pageToShow.id }, "", `?${pageToShow.id}`);
+//   }
+
+//   if (activeNavBtn) {
+//     setActiveNavHomeItem(activeNavBtn);
+//   }
+// }
+
+function handleNavigation(pageToShow =[], pagesToHide = [], action = null, pushHistory = true, activeNavBtn = null) {
+  // Sembunyikan semua halaman dengan menghapus class animasi
+  pagesToHide.forEach(page => {
+    page.classList.add('hidden');
+      setTimeout(() => {
+    // pageToShow.classList.add('show');
+    page.classList.remove('show', 'page-transition');
+  }, 10); // delay kecil agar transition beke
+  });
+
+  // Reset dan tampilkan halaman baru dengan animasi
+  pageToShow.classList.remove('hidden');
+  pageToShow.classList.add('page-transition');
+
+  // Pakai timeout agar animasi berjalan setelah elemen muncul
+  setTimeout(() => {
+    pageToShow.classList.add('show');
+  }, 10); // delay kecil agar transition bekerja
+
+if (pageToShow.id === "dashboard-content" || pageToShow.id === "profile-content") {
+  
+  
+   bottomNav.classList.remove('hidden');
+  bottomNav.classList.add('page-transition');
+    // Pakai timeout agar animasi berjalan setelah elemen muncul
+  setTimeout(() => {
+    bottomNav.classList.add('show');
+  }, 10); // delay kecil agar transition bekerja
+}
+if (pageToShow.id === "scan-content") {
+  
+
+   scanNav.classList.remove('hidden');
+  scanNav.classList.add('page-transition');
+    // Pakai timeout agar animasi berjalan setelah elemen muncul
+  setTimeout(() => {
+    scanNav.classList.add('show');
+  }, 10); // delay kecil agar transition bekerja
+}
 
   if (action) action();
 
@@ -646,6 +840,7 @@ function handleNavigation(pageToShow, pagesToHide = [], action = null, pushHisto
 
 
 
+
 // function handleNavigation(showElement, hideElements, callback) {
 //   hideElements.forEach(el => el.classList.add('hidden'));
 //   showElement.classList.remove('hidden');
@@ -657,8 +852,8 @@ function handleNavigation(pageToShow, pagesToHide = [], action = null, pushHisto
 
 // Fungsi untuk menampilkan pesan selamat datang
 function grettingMessage() {
-if (token) {
-  const payload = JSON.parse(atob(token.split('.')[1]));
+if (tokenlogin) {
+  const payload = JSON.parse(atob(tokenlogin.split('.')[1]));
   const nim = payload.id;
   const nama = payload.nama;
   const jurusan2 = payload.jurusan;
@@ -703,9 +898,9 @@ greetingEl.textContent = `User tidak ada`;
 // Fungsi memunculkan detail profil dari token
 function updateProfileDetailsFromToken() {
 
-  if (!token) return;
+  if (!tokenlogin) return;
 
-  const payload = JSON.parse(atob(token.split('.')[1]));
+  const payload = JSON.parse(atob(tokenlogin.split('.')[1]));
   const nama = payload.nama;
   const nim = payload.id;
   const jurusan2 = payload.jurusan;
@@ -738,8 +933,8 @@ document.getElementById('profileName').textContent = nama;
 // Log History
 function updateLoginHistory() {
 
-  if (!token) return;
-const payload = JSON.parse(atob(token.split('.')[1]));
+  if (!tokenlogin) return;
+const payload = JSON.parse(atob(tokenlogin.split('.')[1]));
   const nim = payload.id;
 
   const rowsPerPage = 10;
@@ -774,20 +969,55 @@ tdStatus.className = 'px-4 py-2 text-center';
 
 const spanStatus = document.createElement('span');
 spanStatus.className = log.is_active ? 'text-green-600 font-semibold' : 'text-gray-500';
-spanStatus.textContent = log.is_active ? 'Aktif' : 'Selesai';
+
+
+// spanStatus.textContent = log.is_active ? '' : 'Selesai';
+if (log.is_active && log.is_current_session) {
+  spanStatus.textContent = 'Browser yang saat ini Aktif';
+  tdStatus.appendChild(spanStatus);
+} else if (log.is_active) {
+  
+} else {
+  spanStatus.textContent = 'Selesai';
+  tdStatus.appendChild(spanStatus);
+}
+
 
 tdStatus.appendChild(spanStatus);
 
 // Tambahkan tombol logout jika aktif
 if (log.is_active) {
-  const br = document.createElement('br');
   const btn = document.createElement('button');
-  btn.textContent = 'Logout';
-  btn.className = 'mt-2 bg-red-500 hover:bg-red-600 text-white px-2 py-1 rounded text-sm';
-  btn.onclick = () => logoutById(log.id);
+  if (log.is_current_session){
+  btn.disabled = true; // disable button jika ini adalah sesi aktif
+  // btn.classList.add('opacity-50');
+  btn.textContent = 'Sesi Aktif';
+  } 
+else {
+// btn.disabled = false; // disable button jika ini adalah sesi aktif
+btn.textContent = 'Logout';
+btn.className = 'mt-2 bg-red-500 hover:bg-red-600 text-white px-2 py-1 rounded text-sm';
+ btn.onclick = () => {
+  Swal.fire({
+    title: `Yakin ingin logout ${log.id}?`,
+    icon: 'warning',
+    color: '#ffffff',
+    background: '#262626',
+    showCancelButton: true,
+    confirmButtonColor: '#B71C1C',
+    cancelButtonColor: '#3085d6',
+    confirmButtonText: 'Logout',
+    cancelButtonText: 'Batal'
+  }).then((result) => {
+    if (result.isConfirmed) {
+      logoutById(log.id);
+    }
+  });
+};
 
-  tdStatus.appendChild(br);     // buat turun ke bawah
-  tdStatus.appendChild(btn);    // masukkan button di bawah span
+   // buat turun ke bawah
+tdStatus.appendChild(btn);    // masukkan button di bawah span
+}
 }
 
 tr.appendChild(tdStatus);
@@ -803,26 +1033,43 @@ tbody.appendChild(tr);
 }
 async function logoutById(logId) {
 console.log("Logout ID: ", logId);
-  try {
-    const res = await fetch('/logout-by-id', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({ id: logId }) // kirim ID sesi yang ingin di-logout
+    
+      try {
+        const res = await fetch('/logout-by-id', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ id: logId }) // kirim ID sesi yang ingin di-logout
+        });
+    
+        const result = await res.json();
+        if (res.ok) {
+          // alert('Logout berhasil untuk sesi tersebut.');
+          
+              Swal.fire({
+      title: 'Berhasil!',
+      text: 'Logout berhasil untuk sesi ' + logId + 'tersebut.',
+      icon: 'success',
+      background: '#262626', // contoh warna latar bg-body-100 Tailwind
+      color: '#ffffff', // warna teks
+      customClass: {
+        title: 'text-white text-2xl',
+        popup: 'rounded-lg',
+        confirmButton: 'bg-primary-100 text-white hover:bg-primary-40',
+      }
     });
-
-    const result = await res.json();
-    if (res.ok) {
-      alert('Logout berhasil untuk sesi tersebut.');
-      fetchLoginHistory(); // pastikan fungsi ini memuat ulang tabel
-    } else {
-      alert(result.message || 'Logout gagal.');
-    }
-  } catch (error) {
-    console.error('Logout error:', error);
-    alert('Terjadi kesalahan saat logout.');
-  }
+          fetchLoginHistory(); // pastikan fungsi ini memuat ulang tabel
+        } else {
+          alert(result.message || 'Logout gagal.');
+        }
+      } catch (error) {
+        console.error('Logout error:', error);
+        alert('Terjadi kesalahan saat logout.');
+      }
+      
+    
+  
 }
 
 
@@ -841,12 +1088,25 @@ console.log("Logout ID: ", logId);
     }
   });
 
-  fetch(`/api/logs/${nim}`)
+  fetch(`/api/logs/${nim}`, {
+  headers: {
+    'Authorization': `Bearer ${tokenlogin}`
+  }
+})
     .then(res => res.json())
-    .then(logs => {
-      loginData = logs;
-      renderTable();
-    })
+  .then(logs => {
+  // console.log("[DEBUG] Response dari backend:", logs);
+
+  // Validasi bahwa logs adalah array
+  if (!Array.isArray(logs)) {
+    // console.error("Data login bukan array:", logs);
+    throw new Error("Data tidak valid");
+  }
+
+  loginData = logs;
+  renderTable();
+})
+
     .catch(err => {
       console.error('Gagal memuat login history:', err);
       document.getElementById('loginHistoryBody').innerHTML = `
@@ -909,7 +1169,7 @@ async function generateAndDisplayQRCode(forceNew = false) {
   
   // console.log('[DEBUG] Token JWT:', token);
 
-  if (!token) {
+  if (!tokenlogin) {
     alert('Anda belum login.');
     return;
   }
@@ -918,7 +1178,7 @@ async function generateAndDisplayQRCode(forceNew = false) {
     const response = await fetch('/generate-qr', {
       method: 'GET',
       headers: {
-        'Authorization': `Bearer ${token}`
+        'Authorization': `Bearer ${tokenlogin}`
       }
     });
 // console.log('[DEBUG] Status response:', response.status);
@@ -985,17 +1245,18 @@ function checkScreenSize() {
   console.log("[DEBUG] Window Width:", width);
   console.log("[DEBUG] Window Height:", height);
   console.log("[DEBUG] Last Active Page:", lastActivePage);
+  
   // Hindari error kalau elemen belum tersedia
   if (!dashboardContent || !scanContent || !profileContent) return;
   if (width >= 1024) {
-    document.getElementById("mobile-warning").classList.remove("hidden");
+    mobilewarning.classList.remove("hidden");
     dashboardContent.classList.add("hidden");
     scanContent.classList.add("hidden");
     profileContent.classList.add("hidden");
     bottomNav.classList.add("hidden");
     scanNav.classList.add("hidden");
   } else {
-    document.getElementById("mobile-warning").classList.add("hidden");
+    mobilewarning.classList.add("hidden");
 
     // Pastikan semuanya disiapkan dulu
     dashboardContent.classList.add("hidden");
@@ -1005,18 +1266,20 @@ function checkScreenSize() {
     // Tampilkan halaman sesuai lastActivePage
     if (lastActivePage === 'home') {
       handleNavigation(dashboardContent, [scanContent, scanNav, profileContent],null, true, homeBtn);
-      bottomNav.classList.remove("hidden");
-      scanNav.classList.add("hidden");
+
 
     } else if (lastActivePage === 'scan') {
-      handleNavigation(scanContent, [dashboardContent, profileContent]);
-      bottomNav.classList.add("hidden");
-      scanNav.classList.remove("hidden");
+      handleNavigation([scanContent, scanNav], [dashboardContent, profileContent]);
+
 
     } else if (lastActivePage === 'profile') {
-      handleNavigation(profileContent, [dashboardContent, , scanContent, scanNav, profileContent], stopCamera, true, profileBtn);
-      bottomNav.classList.remove("hidden");
-      scanNav.classList.add("hidden");
+     handleNavigation(profileContent, [dashboardContent, scanContent, scanNav], stopCamera, true, profileBtn);
+
+
+    }else if (lastActivePage === 'browser-check') {
+      handleNavigation([dashboardContent, bottomNav], [profileContent, scanContent, scanNav, profileContent], null, null, null);
+    //   bottomNav.classList.add("hidden");
+    //   scanNav.classList.add("hidden");
     }
   }
 }

@@ -60,7 +60,15 @@
   </script>
 </head>
 <body class="bg-body-100 flex items-center justify-center min-h-screen">
-  <div class="bg-base-0 p-8 rounded-lg shadow-md w-[90%] sm:max-w-md">
+
+ <!-- Browser Check -->
+    <div
+      id="browser-check"
+      class="hidden m-6 mobile-warning flex justify-center items-center h-screen text-3xl text-failed-100"
+    >
+      <p class="text-center">Tes Browser</p>
+    </div>
+  <div id="formLogin" class="bg-base-0 p-8 rounded-lg shadow-md w-[90%] sm:max-w-md">
     <h2 class="text-2xl font-bold text-primary-100 mb-6 text-center">Login E-GBHM</h2>
 
    <!-- ✅ FORM 1: CEK NIM -->

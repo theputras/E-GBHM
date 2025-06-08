@@ -1,6 +1,6 @@
 const bcrypt = require('bcrypt');
 const db = require('./databaseController');
-const { JWT_SECRET } = require('./secure');
+const { JWTSECRET, generateSessionId } = require('./secure');
 const jwt = require('jsonwebtoken');
 
 async function checkNIM(req, res) {
@@ -48,13 +48,16 @@ async function login(req, res) {
     if (!match) {
       return res.status(401).json({ status: 'error', message: 'Password salah' });
     }
+    
+    const session_id = req.sessionID;
+const tokenlogin = jwt.sign({
+  id: mahasiswa.id_mahasiswa,
+  nama: mahasiswa.nama,
+  jurusan: mahasiswa.jurusan,
+  session_id: session_id  // ⬅️ ini penting!
+}, JWTSECRET, { expiresIn: '24h' });
 
-    const token = jwt.sign({
-      id: mahasiswa.id_mahasiswa,
-      nama: mahasiswa.nama,
-      jurusan: mahasiswa.jurusan,
-    }, JWT_SECRET, { expiresIn: '24h' });
-
+const signature = tokenlogin.split('.')[2];
     const ip = req.ip;
     const device = req.get('User-Agent');
     req.session.mahasiswa = {
@@ -62,19 +65,18 @@ async function login(req, res) {
       name: mahasiswa.nama,
       jurusan: mahasiswa.jurusan
     };
-    const session_id = req.sessionID;
-    const signature = token.split('.')[2];
 
     await db.query(`
       INSERT INTO user_logs (id, session_id, user_id, ip_address, device_info)
       VALUES ($1, $2, $3, $4, $5)
     `, [signature, session_id, mahasiswa.id_mahasiswa, ip, device]);
 
-    console.log(`[DEBUG] Token berhasil dibuat untuk ${nim}: ${token}`);
+    console.log(`[DEBUG] Token berhasil dibuat untuk ${nim}: ${tokenlogin}`);
 
     return res.status(200).json({
       status: 'success',
-      token,
+      tokenlogin,
+      session_id: session_id,
       mahasiswa: {
         id: mahasiswa.id_mahasiswa,
         nama: mahasiswa.nama,
@@ -93,16 +95,29 @@ async function login(req, res) {
 
 async function getLoginHistory(req, res) {
   const { nim } = req.params;
+     const tokenlogin = req.headers['authorization']?.split(' ')[1];
 
+  if (!tokenlogin) {
+    return res.status(401).json({ message: 'Token tidak tersedia' });
+  }
   try {
-    const result = await db.query(`
-      SELECT id, login_time, logout_time, ip_address, device_info, is_active
-      FROM user_logs
-      WHERE user_id = $1
-      ORDER BY login_time DESC
-    `, [nim]);
+    const decoded = jwt.verify(tokenlogin, JWTSECRET);
+    const currentSessionId = decoded.session_id;
+ const result = await db.query(`
+  SELECT id, session_id, login_time, logout_time, ip_address, device_info, is_active
+  FROM user_logs
+  WHERE user_id = $1
+  ORDER BY login_time DESC
+`, [nim]);
 
-    return res.status(200).json(result.rows);
+    // return res.status(200).json(result.rows);
+       // Tandai mana yang session sekarang
+    const historyWithFlag = result.rows.map(row => ({
+      ...row,
+      is_current_session: row.session_id === currentSessionId
+    }));
+    
+    return res.status(200).json(historyWithFlag);
   } catch (err) {
     console.error("Gagal mengambil riwayat login:", err);
     return res.status(500).json({ message: "Terjadi kesalahan server." });
@@ -110,14 +125,14 @@ async function getLoginHistory(req, res) {
 }
 
 // Logout function
-async function logout(req, res, next) {
+async function logout(req, res) {
   const fulltoken = req.headers['authorization']?.split(' ')[1];
 const signature = fulltoken?.split('.')[2];
 
 if (!signature) return res.status(401).json({ message: 'Token tidak tersedia' });
 console.log('STEP 1: Token parsed');
 try {
-  jwt.verify(fulltoken, JWT_SECRET); // Verifikasi token lengkap
+  jwt.verify(fulltoken, JWTSECRET); // Verifikasi token lengkap
   
   console.log('STEP 2: JWT verified');
   await db.query(`UPDATE user_logs SET is_active = FALSE, logout_time = NOW() WHERE id = $1`,
@@ -128,7 +143,6 @@ try {
     }
   );
   console.log('STEP 3: DB query done');
-   next();
 } catch (err) {
   return res.status(403).json({ message: 'Token tidak valid' });
 }
@@ -168,25 +182,27 @@ async function logoutTableHistoryUser(req, res, next) {
 // Logout all devices for the user
 
 async function logoutAllDevices(req, res) {
-  const token = req.headers['authorization']?.split(' ')[1];
-  if (!token) return res.status(401).json({ message: 'Token tidak tersedia' });
+  const tokenlogin = req.headers['authorization']?.split(' ')[1];
+  if (!tokenlogin) return res.status(401).json({ message: 'Token tidak tersedia' });
 
   try {
-    const decoded = jwt.verify(token, JWT_SECRET);
+    const decoded = jwt.verify(tokenlogin, JWTSECRET);
     const userId = decoded.id;
+    const currentSessionId = decoded.session_id; // ⬅️ ambil session aktif
 
     const result = await db.query(`
       UPDATE user_logs
       SET is_active = FALSE, logout_time = NOW()
-      WHERE user_id = $1 AND is_active = TRUE
-    `, [userId]);
+      WHERE user_id = $1 AND is_active = TRUE AND session_id != $2
+    `, [userId, currentSessionId]);
 
-    return res.json({ message: `Berhasil logout dari ${result.rowCount} perangkat aktif.` });
+    return res.json({ message: `Berhasil logout dari ${result.rowCount} perangkat aktif lainnya.` });
   } catch (err) {
     console.error('Logout all devices error:', err);
     return res.status(403).json({ message: 'Token tidak valid' });
   }
 }
+
 
 
 module.exports = {

@@ -1,5 +1,5 @@
 
-const token = localStorage.getItem('token');
+const tokenlogin = localStorage.getItem('tokenlogin');
 const nimForm = document.getElementById("nimForm");
 const passwordForm = document.getElementById("passwordForm");
 const makePasswordBtn = document.getElementById("makePasswordBtn");
@@ -8,10 +8,44 @@ const passwordInput = document.getElementById("password");
 const loginBtn = document.getElementById("loginBtn");
 const checkNim = document.getElementById("checkNim");
 const togglePassword = document.getElementById("togglePassword");
+const formLogin = document.getElementById("formLogin");
+
+// Browser detection
+const browsercheck = document.getElementById('browser-check');
+const browserCheckText = browsercheck.querySelector('p');
+  const userAgent = navigator.userAgent;
+const isChrome = userAgent.includes("Chrome") && !userAgent.includes("Edg") && !userAgent.includes("OPR");
+const isFirefox = userAgent.includes("Firefox");
+const isSafari = userAgent.includes("Safari") && !userAgent.includes("Chrome") && !userAgent.includes("Chromium");
 document.addEventListener("DOMContentLoaded", () => {
 
+
+  // Check browser support
+if (!(isChrome || isFirefox || isSafari)) {
+  fetch("/check-browser")
+    .then(response => response.json())
+    .then(data => {
+      browsercheck.classList.remove('hidden');
+      browserCheckText.textContent = data.error;
+          formLogin.classList.add("hidden");
+    logout();
+    })
+    .catch(err => {
+      browsercheck.classList.remove('hidden');
+          formLogin.classList.add("hidden");
+   logout();
+      browserCheckText.textContent = `Terjadi kesalahan: ${err.message}`;
+    });
+}
+  
+
+
+
+
+
+
 // startSilentRefresh();
-  if (token) {
+  if (tokenlogin) {
     startSilentRefresh();
   }
   
@@ -104,7 +138,8 @@ togglePassword.textContent = "Show";
 
           setTimeout(() => {
             
-            localStorage.setItem("token", data.token); // Simpan token ke localStorage
+            localStorage.setItem("tokenlogin", data.tokenlogin); // Simpan token ke localStorage
+            localStorage.setItem("session_id", data.session_id); // Simpan token ke localStorage
             window.location.href = "/"; // ✅ redirect ke halaman utama
     }, 2000); // kasih delay 2000ms
       // alert("wes login cok");
@@ -120,15 +155,39 @@ togglePassword.textContent = "Show";
   // end of DOMContentLoaded
 });
 
+// fungsi
+
+function logout() {
+
+ fetch('/logout-egbhm', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${tokenlogin}`
+    }
+  })
+  .then(res => res.json())
+  .then(data => {
+    // Hapus token & redirect
+    localStorage.removeItem('tokenlogin');
+     
+  })
+  .catch(err => {
+    console.error('Logout error:', err);
+    // Tetap hapus token dan redirect meskipun gagal update log
+    localStorage.removeItem('tokenlogin');
+
+  });
+}
+
 
 async function startSilentRefresh() {
 console.log('Starting silent refresh...');
-  if (token) {
+  if (tokenlogin) {
     try {
       const response = await fetch('/check-session', {
         method: 'GET',
         headers: {
-          'Authorization': `Bearer ${token}`
+          'Authorization': `Bearer ${tokenlogin}`
         }
       });
       const result = await response.json();
@@ -141,11 +200,11 @@ console.log('Starting silent refresh...');
         return;
       } else {
         // Token ada tapi tidak valid atau sudah expired
-        localStorage.removeItem('token');
+        logout();
       }
     } catch (err) {
       console.error('Error checking session:', err);
-      localStorage.removeItem('token');
+      logout();
     }
   }
   

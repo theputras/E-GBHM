@@ -1,6 +1,6 @@
 const jwt = require('jsonwebtoken');
 const db = require('./databaseController');
-const { JWT_SECRET } = require('./secure');
+const { JWTSECRET } = require('./secure');
 
 
 
@@ -40,7 +40,7 @@ async function generateQR(req, res) {
     const now = new Date();
     const expiredAt = new Date(now.getTime() + 5 * 60 * 1000); // 5 menit dari sekarang
     const payload = { user_id: userId, timestamp: now.getTime() };
-    const token = jwt.sign(payload, JWT_SECRET, { expiresIn: '24h' });
+    const token = jwt.sign(payload, JWTSECRET, { expiresIn: '24h' });
 
     // Insert QR baru
     const insertResult = await db.query(
@@ -73,7 +73,7 @@ async function generateQR(req, res) {
 //   // Generate JWT token
 //   const qrToken = jwt.sign(
 //     { id: user.id, nama: user.nama, timestamp: Date.now() },
-//     JWT_SECRET,
+//     JWTSECRET,
 //     { expiresIn: '5m' } // berlaku 5 menit
 //   );
 
@@ -116,7 +116,7 @@ const verifyQR = async (req, res) => {
   
     let decoded;
     try {
-      decoded = jwt.verify(token, JWT_SECRET);
+      decoded = jwt.verify(token, JWTSECRET);
     } catch (err) {
       return res.status(403).json({ message: 'QR tidak valid atau sudah kadaluarsa.' });
     }

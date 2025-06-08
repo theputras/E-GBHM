@@ -10,7 +10,7 @@ const port = process.env.PORT || 3000;
 
 const { checkNIM, login, getLoginHistory, logout, logoutTableHistoryUser, logoutAllDevices  } = require('./controllers/loginController');
 const { generateQR, verifyQR, getQRScannedBy } = require('./controllers/qrController');
-const { authenticateToken, authenticateTokenWithSession } = require('./controllers/secure');
+const { authenticateTokenWithSession } = require('./controllers/secure');
 
 
 const app = express();
@@ -22,6 +22,27 @@ app.use(express.static(path.join(__dirname, '../public')));
 //   console.log('Incoming request:', req.method, req.url, req.body);
 //   next();
 // });
+
+const allowOnlyCertainBrowsers = (req, res) => {
+  const userAgent = req.headers['user-agent'] || '';
+  const isChrome = userAgent.includes("Chrome") && !userAgent.includes("Edg") && !userAgent.includes("OPR");
+  const isFirefox = userAgent.includes("Firefox");
+  const isSafari = userAgent.includes("Safari") && !userAgent.includes("Chrome") && !userAgent.includes("Chromium");
+
+
+  if (!isChrome && !isFirefox && !isSafari) {
+    return res.status(403).json({
+      error: "Maaf, aplikasi hanya dapat diakses menggunakan browser Chrome, Firefox, atau Safari (Apple User).",
+    });
+  }
+
+  // Jika browser valid
+  res.status(200).json({ message: "Browser didukung" });
+};
+
+
+
+
 const SESSION_SECRET = process.env.SESSION_SECRET || crypto.randomBytes(64).toString('hex');
 
 app.use(session({
@@ -62,7 +83,7 @@ app.get('/login', (req, res) => {
 //     res.sendFile(path.join(__dirname, 'test.csv'));
 // });
 
-app.get('/testui', (req, res) => {
+app.get('/testui',  (req, res) => {
     res.sendFile(path.join(__dirname, '../public', 'uiFix.html'));
 });
 
@@ -74,7 +95,7 @@ app.get('/api/logs/:nim', getLoginHistory);
 app.get('/generate-qr', authenticateTokenWithSession, generateQR );
 app.post('/verify-qr', verifyQR);
 app.post('/qr-scanned-by', getQRScannedBy);
-
+app.get("/check-browser", allowOnlyCertainBrowsers);
 app.post('/logout-egbhm', logout, authenticateTokenWithSession, (req, res) => {
   res.status(200).json({ message: 'User logged out' });
 });

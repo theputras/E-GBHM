@@ -14,6 +14,7 @@
 
     <!-- Link to the external JavaScript file -->
     <script src="./scripts/index.js" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <style>
       .mobile-warning {
         display: none;
@@ -21,18 +22,29 @@
       .dashboard-content {
         display: block;
       }
-      .bottom-nav {
+      #bottom-nav {
         position: fixed;
         bottom: 0;
         left: 0;
         width: 100%;
-        background-color: #000;
         padding: 10px;
         display: flex;
         justify-content: space-between;
         align-items: center;
         z-index: 1000;
       }
+      
+      .page-transition {
+  opacity: 0;
+  transform: translateY(50px);
+  transition: all 0.3s ease-in-out;
+}
+
+.page-transition.show {
+  opacity: 1;
+  transform: translateY(0);
+}
+
     </style>
     <script>
       tailwind.config = {
@@ -89,15 +101,33 @@
     <!-- Mobile Warning -->
     <div
       id="mobile-warning"
-      class="hidden mobile-warning flex justify-center items-center h-screen text-3xl text-failed-100"
+      class="hidden flex justify-center items-center h-screen text-3xl text-failed-100"
     >
       <p>Pakailah HP untuk tampilan yang lebih baik</p>
+    </div> 
+    <!-- Loading Waiting -->
+    <div
+  id="loading-waiting"
+  class="flex flex-col justify-center items-center h-screen text-10xl text-primary-100 gap-4"
+>
+  <iconify-icon
+    icon="eos-icons:three-dots-loading"
+    class="text-9xl animate-pulse"
+  ></iconify-icon>
+</div>
+    
+    <!-- Browser Check -->
+    <div
+      id="browser-check"
+      class="hidden m-6 flex justify-center items-center h-screen text-3xl text-failed-100"
+    >
+      <p class="text-center">Tes Browser</p>
     </div>
 
     <!-- Dashboard Content -->
     <main
       id="dashboard-content"
-      class="flex flex-col pb-20 overflow-y-auto min-h-screen"
+      class="hidden flex flex-col pb-20 overflow-y-auto min-h-screen"
     >
       <!-- Navbar -->
       <div class="mt-4 py-4 px-6 text-left ml-4">
@@ -225,7 +255,7 @@
       <!-- Scan Bottom Navigation -->
       <nav
         id="scan-nav"
-        class="hidden fixed bottom-0 left-0 right-0 flex justify-between items-center"
+        class="hidden fixed bottom-0 left-0 right-0 flex justify-between items-center page-transition"
       >
         <ul class="w-full flex justify-between items-center ml-3 mr-3">
           <!-- Scan Button -->
@@ -375,10 +405,11 @@
     </main>
 
     <!-- Bottom Navigation -->
-    <nav
-      id="bottom-nav"
-      class="bottom-nav bg-primary-60 fixed bottom-0 left-0 right-0 flex justify-between items-center"
-    >
+  <nav
+  id="bottom-nav"
+  class="hidden bg-primary-60 fixed bottom-0 left-0 right-0 flex justify-between items-center opacity-0 translate-y-4 transition-all duration-500"
+>
+
       <ul class="w-full flex justify-between items-center ml-3 mr-3">
         <!-- Home Button -->
         <li

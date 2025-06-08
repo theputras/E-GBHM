@@ -16,6 +16,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
   
   nimForm.addEventListener("submit", async (e) => {
+    const defaultCheckNimText = checkNim.textContent;
     // ✅ Sembunyikan tombol submit dan disable input NIM
     nimInput.disabled = true;
     checkNim.classList.remove("bg-primary-100");
@@ -37,6 +38,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
       if (data.status === "not_found") {
         alert("NIM tidak ditemukan.");
+        nimInput.disabled = false;
+    checkNim.classList.add("bg-primary-100");
+    checkNim.classList.remove("bg-primary-40");
+checkNim.textContent = defaultCheckNimText;
+
         return;
       }
 
@@ -93,9 +99,9 @@ const nim = document.getElementById("nim").value;
       loginBtn.classList.remove("bg-primary-100");
       loginBtn.classList.add("bg-primary-40");
       loginBtn.textContent = "Berhasil login, silakan tunggu...";
-      const type = passwordInput.type === "password";
-    passwordInput.type = type;
-    togglePassword.textContent = type === "Hide";
+      passwordInput.type = "password";
+togglePassword.textContent = "Show";
+
           setTimeout(() => {
             
             localStorage.setItem("token", data.token); // Simpan token ke localStorage
@@ -129,7 +135,9 @@ console.log('Starting silent refresh...');
       console.log('Refresh result:', result.message);
       if (response.ok) {
         // Jika session masih aktif, redirect ke halaman utama
-        window.location.href = '/';
+         if (window.location.pathname === "/login") {
+          window.location.replace("/"); // replace() agar tidak bisa back
+        }
         return;
       } else {
         // Token ada tapi tidak valid atau sudah expired

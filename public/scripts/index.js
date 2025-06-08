@@ -16,6 +16,7 @@ const backBtn = document.getElementById('backBtn');
 const backBtnScan = document.getElementById('backBtnScan');
     const profileBtn = document.getElementById('profileBtn');
 const profileContent = document.getElementById('profile-content');
+const verifyidcontent = document.getElementById('verify-id-content');
 const logoutAllDeviceBtn = document.getElementById('logoutAllDeviceBtn'); // Tambahkan elemen logoutAllDeviceBtn
 const yesVerifyID = document.getElementById('yesVerifyID');
 const noVerifyID = document.getElementById('noVerifyID');
@@ -38,12 +39,25 @@ document.addEventListener('DOMContentLoaded', function() {
     console.log("[DEBUG] Media query triggered!");
     checkScreenSize();
   });
+  checkScreenSize();
 
-  checkScreenSize(); // Panggil saat load awal
+  // checkScreenSize(); // Panggil saat load awal
+  // misal: baca path untuk menentukan halaman aktif
+  const path = window.location.pathname;
+  if (path.includes("profile")) lastActivePage = 'profile';
+  else if (path.includes("scan")) lastActivePage = 'scan';
+  else lastActivePage = 'home';
 
   
     
-    
+// Saat pertama load di halaman '/', anggap user ke dashboard
+  // const hash = window.location.hash.replace("#", "") || "dashboard-content";
+  // const target = document.getElementById(hash);
+
+  // if (target) {
+  //   handleNavigation(target, [scanContent, profileContent, showQrContent]);
+  // }
+
     
     // Jika token tidak ditemukan, langsung redirect ke login
   if (!token) {
@@ -74,12 +88,39 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     
+window.addEventListener("popstate", (event) => {
+  const page = event.state?.page || "dashboard";
+isBackNavigation = true;
+  switch (page) {
+    case "scan-qr":
+      handleNavigation(scanContent, [dashboardContent, bottomNav, profileContent, showQrContent], startScanner, false);
+      break;
+    case "profile":
+      handleNavigation(profileContent, [dashboardContent, , scanContent, scanNav, profileContent], stopCamera, true, profileBtn);
+      bottomNav.classList.remove('hidden');
+      break;
+    case "show-qr":
+      handleNavigation(showQrContent, [dashboardContent, bottomNav, scanContent, profileContent], null, false);
+      break; 
+      case "verify-qr":
+      handleNavigation(showQrContent, [dashboardContent, bottomNav, scanContent, profileContent], null, false);
+      break;
+    default:
+      handleNavigation(dashboardContent, [scanContent, scanNav, profileContent],null, true, homeBtn);
+      bottomNav.classList.remove('hidden');
+  }
+});
+
+
+
+
+
 
     
 
 homeBtn.addEventListener('click', function () {
-  handleNavigation(dashboardContent, [scanContent, scanNav, profileContent], stopCamera);
-  setActiveNavHomeItem(homeBtn);
+  handleNavigation(dashboardContent, [scanContent, scanNav, profileContent],stopCamera, true, homeBtn);
+    
   lastActivePage = 'home'; // Update last active page
   // showSection("dashboard-content");
  scanContent.classList.add('hidden');
@@ -92,7 +133,7 @@ homeBtn.addEventListener('click', function () {
 
 // Event listener untuk tombol Scan (mulai scan QR)
 scanBtn.addEventListener('click', function () {
-  handleNavigation(scanContent, [dashboardContent, bottomNav, profileContent, showQrContent], startScanner);
+      handleNavigation(scanContent, [dashboardContent, bottomNav, profileContent, showQrContent], startScanner, true, null);
   // showSection("scan-content");
  
 lastActivePage = 'scan';
@@ -119,20 +160,20 @@ lastActivePage = 'scan';
 
 backBtn.addEventListener('click', function () {
     // Menampilkan dashboard, sembunyikan halaman lainnya
-    handleNavigation(dashboardContent, [scanContent, scanNav, profileContent], backScanner);
+    handleNavigation(dashboardContent, [scanContent, scanNav, profileContent],backScanner, true, homeBtn);
     document.getElementById("titleScan").textContent = ""; // Reset title
 });
 backBtnScan.addEventListener('click', function () {
     // Menampilkan dashboard, sembunyikan halaman lainnya
-    handleNavigation(dashboardContent, [scanContent, scanNav, profileContent], backScanner);
+    handleNavigation(dashboardContent, [scanContent, scanNav, profileContent],backScanner, true, homeBtn);
     document.getElementById("titleScan").textContent = ""; // Reset title
 });
 
     // Initially set the active state to Home button when on Dashboard
-    setActiveNavHomeItem(homeBtn);
-    // showQrContent.classList.add('hidden');
-    profileContent.classList.add('hidden');
-    scanContent.classList.add('hidden');
+    // setActiveNavHomeItem(homeBtn);
+    // // showQrContent.classList.add('hidden');
+    // profileContent.classList.add('hidden');
+    // scanContent.classList.add('hidden');
     // setActiveNavScanItem(scanQr);
     grettingMessage();
     
@@ -174,12 +215,12 @@ logoutBtn.addEventListener('click', function () {
 
 profileBtn.addEventListener('click', function () {
     // Menampilkan dashboard, sembunyikan halaman lainnya
-    handleNavigation(profileContent, [dashboardContent, , scanContent, scanNav, profileContent], backScanner);
+    handleNavigation(profileContent, [dashboardContent, , scanContent, scanNav, profileContent], stopCamera, true, profileBtn);
       updateProfileDetailsFromToken();
     updateLoginHistory();
     // showSection("profile-content");
     lastActivePage = 'profile';
-    setActiveNavHomeItem(profileBtn);
+
     document.getElementById("titleScan").textContent = ""; // Reset title
 });
 
@@ -248,73 +289,79 @@ async function startCamera() {
     const canvas = document.createElement("canvas");
     const context = canvas.getContext("2d");
 
+
 // Function to scan QR Code from video stream
 function scanQRCode() {
-    if (video.readyState === video.HAVE_ENOUGH_DATA) {
-        
-        canvas.height = video.videoHeight;
-        canvas.width = video.videoWidth;
-        context.drawImage(video, 0, 0, canvas.width, canvas.height);
+  if (!scanning) return; // jika scanning sudah dihentikan, keluar
 
-        // Calculate overlay dimensions relative to video dimensions
-        const overlayRect = scannerOverlay.getBoundingClientRect();
-        const videoRect = video.getBoundingClientRect();
+  if (video.readyState === video.HAVE_ENOUGH_DATA) {
+    canvas.height = video.videoHeight;
+    canvas.width = video.videoWidth;
+    context.drawImage(video, 0, 0, canvas.width, canvas.height);
 
-        // Calculate scaling and positioning factors
-        const scaleX = canvas.width / videoRect.width;
-        const scaleY = canvas.height / videoRect.height;
+    const overlayRect = scannerOverlay.getBoundingClientRect();
+    const videoRect = video.getBoundingClientRect();
 
-        // Compute overlay coordinates in video pixel space
-        const overlayStartX = Math.round((overlayRect.left - videoRect.left) * scaleX);
-        const overlayStartY = Math.round((overlayRect.top - videoRect.top) * scaleY);
-        const overlayWidth = Math.round(overlayRect.width * scaleX);
-        const overlayHeight = Math.round(overlayRect.height * scaleY);
+    const scaleX = canvas.width / videoRect.width;
+    const scaleY = canvas.height / videoRect.height;
 
-        // Extract image data only within the overlay region
-        const overlayImageData = context.getImageData(
-            overlayStartX, 
-            overlayStartY, 
-            overlayWidth, 
-            overlayHeight
-        );
+    const overlayStartX = Math.round((overlayRect.left - videoRect.left) * scaleX);
+    const overlayStartY = Math.round((overlayRect.top - videoRect.top) * scaleY);
+    const overlayWidth = Math.round(overlayRect.width * scaleX);
+    const overlayHeight = Math.round(overlayRect.height * scaleY);
 
-        const code = jsQR(overlayImageData.data, overlayWidth, overlayHeight, {
-            inversionAttempts: "dontInvert",
-        });
+    const overlayImageData = context.getImageData(
+      overlayStartX,
+      overlayStartY,
+      overlayWidth,
+      overlayHeight
+    );
 
-        if (code) {
-            // Optional: Validate that the QR code is fully within the overlay
-            const qrCodeRect = {
-                left: code.location.topLeftCorner.x,
-                right: code.location.topRightCorner.x,
-                top: code.location.topLeftCorner.y,
-                bottom: code.location.bottomLeftCorner.y
-            };
+    const code = jsQR(overlayImageData.data, overlayWidth, overlayHeight, {
+      inversionAttempts: "dontInvert",
+    });
 
-            const isFullyWithinOverlay = 
-                qrCodeRect.left >= 0 && 
-                qrCodeRect.right <= overlayWidth && 
-                qrCodeRect.top >= 0 && 
-                qrCodeRect.bottom <= overlayHeight;
-let qrHandled = false;
-            if (isFullyWithinOverlay) {
-            qrHandled = true;
-                // alert("QR Code detected: " + code.data);
-                handleQRCodeData(code.data)
-  .then(() => {
-    stopCamera();
-  })
-  .catch(err => {
-    console.error('QR processing error:', err);
-    qrHandled = false; // reset supaya bisa scan ulang
-  });
+    if (code) {
+      const qrCodeRect = {
+        left: code.location.topLeftCorner.x,
+        right: code.location.topRightCorner.x,
+        top: code.location.topLeftCorner.y,
+        bottom: code.location.bottomLeftCorner.y
+      };
 
-                // startScanner();
-                // stopCamera(); // Optional: Stop camera after successful scan
-            }
-        }
+      const isFullyWithinOverlay =
+        qrCodeRect.left >= 0 &&
+        qrCodeRect.right <= overlayWidth &&
+        qrCodeRect.top >= 0 &&
+        qrCodeRect.bottom <= overlayHeight;
+
+      if (isFullyWithinOverlay) {
+        scanning = false; // hentikan scanning
+        handleQRCodeData(code.data)
+          .then(() => {
+            stopCamera();
+          })
+          .catch(err => {
+            console.error('QR processing error:', err);
+            scanning = true; // reset kalau gagal
+            scanQRCode(); // restart scan
+          });
+        return; // keluar agar tidak lanjut ke requestAnimationFrame
+      }
     }
-    requestAnimationFrame(scanQRCode); // Continue scanning
+  }
+
+  animationFrameId = requestAnimationFrame(scanQRCode);
+}
+
+function startScanQRCode() {
+  scanning = true;
+  scanQRCode(); // mulai scanning
+}
+
+function stopScanQRCode() {
+  scanning = false;
+  cancelAnimationFrame(animationFrameId); // stop loop animasi jika masih jalan
 }
 
 
@@ -334,19 +381,19 @@ let qrHandled = false;
       const result = await response.json();
   
       if (!response.ok) {
-        alert("QR tidak valid");
+        // alert("QR tidak valid");
           // Tambahan: jika QR tidak valid atau sudah digunakan → generate QR baru
-    
+    generateAndDisplayQRCode(true);
   
         return;
       }
   
       // QR Valid dan Data Ditemukan
-      alert("QR sudah di-scan dan valid");
-  
+      // alert("QR sudah di-scan dan valid");
+  stopScanner();
       // Sembunyikan scan-content, tampilkan verify-id-content
-      document.getElementById("scan-content").classList.add("hidden");
-      document.getElementById("verify-id-content").classList.remove("hidden");
+      scanContent.classList.add("hidden");
+      verifyidcontent.classList.remove("hidden");
   scannedData.innerText = "Scan berhasil";
 
       // Tampilkan data profil dari result
@@ -355,7 +402,8 @@ let qrHandled = false;
     <p><strong>NIM:</strong> ${result.user_id}</p>
     <p><strong>Jurusan:</strong> ${result.jurusan}</p>`;
   noVerifyID.addEventListener("click", () => {
-  handleNavigation(scanContent, [dashboardContent, bottomNav, profileContent, showQrContent], startScanner);
+  
+  handleNavigation(scanContent, [dashboardContent, bottomNav, profileContent, verifyidcontent, showQrContent], startScanner);
 });
 
   
@@ -369,7 +417,8 @@ let qrHandled = false;
 function backScanner() {
 lastActivePage = 'home';
 stopCamera();
-  setActiveNavHomeItem(homeBtn);
+  // setActiveNavHomeItem(homeBtn);
+
         
         bottomNav.classList.remove('hidden'); // Show the bottom navigation
   
@@ -391,7 +440,7 @@ async function startScanner() {
     await startCamera(); // Tunggu kamera nyala
   }
 
-  await scanQRCode(); // Baru mulai scan setelah kamera siap
+  await startScanQRCode(); // Baru mulai scan setelah kamera siap
 }
 
 // Function to stop the scanner
@@ -409,6 +458,7 @@ async function stopScanner() {
         
         // Stop the camera when going back to Home
         stopCamera();
+        stopScanQRCode();
         setActiveNavScanItem(showQr);
         startSilentRefresh(); 
         generateAndDisplayQRCode();
@@ -531,17 +581,70 @@ function showPage(page) {
   page.classList.remove('hidden');
 }
 
-// Fungsi untuk menavigasi antara halaman
-function handleNavigation(pageToShow, pagesToHide = [], action = null) {
-  // Sembunyikan halaman yang lain
-  hideAllPages(pagesToHide);
+// // Fungsi untuk menavigasi antara halaman
+// function handleNavigation(pageToShow, pagesToHide = [], action = null) {
+//   // Sembunyikan halaman yang lain
+//   hideAllPages(pagesToHide);
   
-  // Tampilkan halaman yang dipilih
+//   // Tampilkan halaman yang dipilih
+//   showPage(pageToShow);
+
+//   // Lakukan action (seperti start/stop camera) jika diperlukan
+//   if (action) action();
+// }
+
+
+
+// function handleNavigation(pageToShow, pagesToHide = [], action = null, activeBtn = null, push = true) {
+//   // Sembunyikan semua halaman yang lain
+//   pagesToHide.forEach((page) => page?.classList?.add("hidden")); 
+
+//   // Tampilkan halaman yang dipilih
+//   pageToShow?.classList?.remove("hidden");
+
+//   // Jalankan aksi opsional (seperti start scanner)
+//   if (typeof action === 'function') action();
+
+//   // Simpan halaman terakhir
+//   lastActivePage = pageToShow.id || 'home';
+// //   isBackNavigation = false;
+// //   switch (pageToShow.id) {
+// //   case "dashboard-content":
+// //     setActiveNavHomeItem(homeBtn);
+// //     break;
+// //   case "profile-content":
+// //     setActiveNavHomeItem(profileBtn);
+// //     break;
+// //   case "scan-content":
+// //     if (!isBackNavigation) setActiveNavHomeItem(scanBtn);
+// //     break;
+// // }
+//  if (activeBtn) setActiveNavHomeItem(activeBtn);
+
+//   // Tambah ke riwayat browser
+//   if (push && history.state?.page !== lastActivePage) {
+//     history.pushState({ page: lastActivePage }, "", "");
+//   }
+// }
+
+
+
+function handleNavigation(pageToShow, pagesToHide = [], action = null, pushHistory = true, activeNavBtn = null) {
+  hideAllPages(pagesToHide);
   showPage(pageToShow);
 
-  // Lakukan action (seperti start/stop camera) jika diperlukan
   if (action) action();
+
+  if (pushHistory) {
+    history.pushState({ page: pageToShow.id }, "", `?${pageToShow.id}`);
+  }
+
+  if (activeNavBtn) {
+    setActiveNavHomeItem(activeNavBtn);
+  }
 }
+
+
 
 // function handleNavigation(showElement, hideElements, callback) {
 //   hideElements.forEach(el => el.classList.add('hidden'));
@@ -879,16 +982,18 @@ qrContainer.innerHTML = ''; // selalu bersihkan QR lama
 function checkScreenSize() {
   const width = window.innerWidth;
   const height = window.innerHeight;
-  // console.log("[DEBUG] Window Width:", width);
-  // console.log("[DEBUG] Window Height:", height);
-  // console.log("[DEBUG] Last Active Page:", lastActivePage);
+  console.log("[DEBUG] Window Width:", width);
+  console.log("[DEBUG] Window Height:", height);
+  console.log("[DEBUG] Last Active Page:", lastActivePage);
+  // Hindari error kalau elemen belum tersedia
+  if (!dashboardContent || !scanContent || !profileContent) return;
   if (width >= 1024) {
     document.getElementById("mobile-warning").classList.remove("hidden");
-    document.getElementById("dashboard-content").classList.add("hidden");
-    document.getElementById("scan-content").classList.add("hidden");
-    document.getElementById("profile-content").classList.add("hidden");
-    document.getElementById("bottom-nav").classList.add("hidden");
-    document.getElementById("scan-nav").classList.add("hidden");
+    dashboardContent.classList.add("hidden");
+    scanContent.classList.add("hidden");
+    profileContent.classList.add("hidden");
+    bottomNav.classList.add("hidden");
+    scanNav.classList.add("hidden");
   } else {
     document.getElementById("mobile-warning").classList.add("hidden");
 
@@ -899,19 +1004,19 @@ function checkScreenSize() {
 
     // Tampilkan halaman sesuai lastActivePage
     if (lastActivePage === 'home') {
-      handleNavigation(dashboardContent, [scanContent, profileContent]);
-      document.getElementById("bottom-nav").classList.remove("hidden");
-      document.getElementById("scan-nav").classList.add("hidden");
+      handleNavigation(dashboardContent, [scanContent, scanNav, profileContent],null, true, homeBtn);
+      bottomNav.classList.remove("hidden");
+      scanNav.classList.add("hidden");
 
     } else if (lastActivePage === 'scan') {
       handleNavigation(scanContent, [dashboardContent, profileContent]);
-      document.getElementById("bottom-nav").classList.add("hidden");
-      document.getElementById("scan-nav").classList.remove("hidden");
+      bottomNav.classList.add("hidden");
+      scanNav.classList.remove("hidden");
 
     } else if (lastActivePage === 'profile') {
-      handleNavigation(profileContent, [dashboardContent, scanContent]);
-      document.getElementById("bottom-nav").classList.remove("hidden");
-      document.getElementById("scan-nav").classList.add("hidden");
+      handleNavigation(profileContent, [dashboardContent, , scanContent, scanNav, profileContent], stopCamera, true, profileBtn);
+      bottomNav.classList.remove("hidden");
+      scanNav.classList.add("hidden");
     }
   }
 }

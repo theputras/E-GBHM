@@ -19,6 +19,28 @@ GBHM adalah salah satu rangkaian kegiatan non-formal dalam ospek (orientasi maha
 
 ---
 
+## 📚 Daftar Isi
+
+- [🧩 Apa Itu GBHM?](#-apa-itu-gbhm-games-bonding-and-healing-moment)
+- [🚀 Fitur Utama](#-fitur-utama)
+- [🛠 Instalasi](#-instalasi)
+- [🔐 Menjalankan HTTPS secara lokal](#-menjalankan-https-secara-lokal)
+- [☁️ Deploy ke Vercel](#️-deploy-ke-vercel)
+- [📦 Dependencies](#-dependencies)
+- [🧾 Struktur Direktori Penting](#-struktur-direktori-penting)
+- [🛡️ Keamanan](#️-keamanan)
+- [🧭 Navigasi Aplikasi](#-navigasi-aplikasi)
+- [📱 Fitur Frontend](#-fitur-frontend)
+- [⚙️ Struktur Database Utama](#️-struktur-database-utama)
+- [📫 Testing Menggunakan Postman](#-testing-menggunakan-postman)
+- [📝 Catatan Tambahan](#-catatan-tambahan)
+- [🧪 Testing UI](#-testing-ui)
+- [👨‍💻 Kontributor](#-kontributor)
+- [🌐 Link Demo](#link-demo)
+- [🔑 Testing Account](#testing-account)
+
+---
+
 ## 🚀 Fitur Utama
 
 - Login berbasis JWT

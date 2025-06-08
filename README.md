@@ -135,7 +135,7 @@ vercel
 | `helmet`        | Proteksi header HTTP                    |
 | `morgan`        | Logging HTTP request di console         |
 | `cookie-parser` | Baca cookie dari browser                |
-| `uuid`          | Generator ID unik                       |
+| `sweetalert2`   | Alert yang sudah jadi                   |
 | `qrcode`        | Membuat QR code berbasis data teks      |
 | `fs`, `https`   | Setup server HTTPS lokal                |
 

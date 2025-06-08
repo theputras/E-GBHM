@@ -211,3 +211,11 @@ Pull request dan laporan bug sangat diterima. Silakan fork dan submit ide atau p
 
 Kalau ada bagian tambahan seperti demo link, kontak developer, atau dokumentasi API yang ingin ditambahkan, tinggal bilang aja!
 ```
+Link Demo
+https://e-gbhm.theputras.my.id/login
+
+Testing Account
+user: 205090100087
+pass: 665544
+```
+

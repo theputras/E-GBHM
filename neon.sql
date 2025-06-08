@@ -1,27 +1,22 @@
 
+DROP TABLE IF EXISTS mahasiswa CASCADE;
+
 CREATE TABLE mahasiswa (
-    id_mahasiswa VARCHAR(15) PRIMARY KEY,  -- id_mahasiswa = nim
+    id_mahasiswa VARCHAR(15) PRIMARY KEY,
     nama VARCHAR(100) NOT NULL,
     jurusan VARCHAR(100) NOT NULL,
     password VARCHAR(255) NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
 ALTER TABLE mahasiswa
 ADD COLUMN password VARCHAR(255) NOT NULL AFTER jurusan;
 
 DROP TABLE mahasiswa;
 
-CREATE TABLE user_log (
-    id_log SERIAL PRIMARY KEY,
-    user_id VARCHAR(15) NOT NULL REFERENCES mahasiswa(id_mahasiswa),
-    activity VARCHAR(255) NOT NULL,
-    ip_address VARCHAR(45) NOT NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
 
-
--- Tabel user_logs (utama yang dipakai aplikasi)
+-- Log pengguna (aktivitas login)
 CREATE TABLE user_logs (
     id VARCHAR(255) PRIMARY KEY,       -- simpan signature JWT di sini
     session_id VARCHAR(128) NOT NULL,  -- dari express-session
@@ -31,24 +26,27 @@ CREATE TABLE user_logs (
     login_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     logout_time TIMESTAMP,
     is_active BOOLEAN DEFAULT TRUE,
-    token TEXT  -- opsional, jika mau simpan token lengkap
+    token TEXT
 );
 
 
+
+-- QR session
 CREATE TABLE qr_session (
-    id_qr TEXT PRIMARY KEY,                    -- isi JWT, unik per sesi
+    id_qr TEXT PRIMARY KEY,
     user_id VARCHAR(15) REFERENCES mahasiswa(id_mahasiswa) ON DELETE CASCADE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    expired_at TIMESTAMP NOT NULL,             -- waktu berakhir validitas QR
+    expired_at TIMESTAMP NOT NULL,
     is_active BOOLEAN DEFAULT TRUE,
-    used BOOLEAN DEFAULT FALSE,-- apakah token ini masih bisa dipakai
+    used BOOLEAN DEFAULT FALSE
 );
 
+-- Log pemindaian QR
 CREATE TABLE scan_logs (
-  id SERIAL PRIMARY KEY,
-  qr_id TEXT,
-  scanner_id TEXT,
-  scanned_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    id SERIAL PRIMARY KEY,
+    qr_id TEXT,
+    scanner_id TEXT,
+    scanned_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 

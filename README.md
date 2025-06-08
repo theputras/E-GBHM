@@ -243,6 +243,9 @@ Gunakan PostgreSQL dengan tabel berikut:
 | scanner\_id | VARCHAR   | ID mahasiswa yang scan QR   |
 | scanned\_at | TIMESTAMP | Waktu pemindaian            |
 
+
+> 💡 Untuk melihat struktur database dan query lengkap, silakan cek file [neon.sql](https://github.com/theputras/E-GBHM/blob/main/neon.sql)
+
 ---
 
 

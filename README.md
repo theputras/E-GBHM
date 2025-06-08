@@ -215,7 +215,7 @@ Kalau ada bagian tambahan seperti demo link, kontak developer, atau dokumentasi 
 ```
 https://e-gbhm.theputras.my.id/login
 ```
-[https://e-gbhm.theputras.my.id/login](Link Demo)
+[https://e-gbhm.theputras.my.id](Link Demo)
 
 
 ## Testing Account

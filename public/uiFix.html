@@ -13,7 +13,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
 
     <!-- Link to the external JavaScript file -->
-    <script src="./scripts/uitest.js" defer></script>
+    <script src="./scripts/index.js" defer></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <style>
       .mobile-warning {
@@ -44,6 +44,15 @@
 .page-transition.show {
   opacity: 1;
   transform: translateY(0);
+}
+
+.nav-item.zoomIn {
+  transform: scale(1.1);
+  
+}
+
+.nav-item {
+  transition: all transform 0.3s ease-in-out;
 }
 
     </style>
@@ -99,6 +108,7 @@
     </script>
   </head>
   <body class="bg-body-100 h-10 text-white">
+ 
     <!-- Mobile Warning -->
     <div
       id="mobile-warning"
@@ -106,16 +116,6 @@
     >
       <p>Pakailah HP untuk tampilan yang lebih baik</p>
     </div> 
-    <!-- Loading Waiting -->
-    <div
-  id="loading-waiting"
-  class="hidden flex flex-col justify-center items-center h-screen text-10xl text-primary-100 gap-4"
->
-  <iconify-icon
-    icon="eos-icons:three-dots-loading"
-    class="text-9xl animate-pulse"
-  ></iconify-icon>
-</div>
     
     <!-- Browser Check -->
     <div
@@ -165,7 +165,7 @@
     <!-- Scan Content -->
     <main
       id="scan-content"
-      class="bg-body-100 hidden fixed inset-0 overflow-hidden z-50"
+      class="bg-body-100 hidden fixed inset-0 overflow-hidden"
     >
       <div id="scanQrContent">
         <div
@@ -214,12 +214,11 @@
         </div>
       </div>
 
-      <!-- QR Code Data Show Section -->
-      <!-- QR Code Data Show Section -->
+
       <!-- QR Code Data Show Section -->
       <div
         id="showQrContent"
-        class="hidden w-full h-screen flex flex-col justify-between"
+        class="hidden w-full h-screen flex flex-col"
       >
         <div
           class="hidden mt-4 py-4 px-6 text-left ml-4 flex items-left z-10"
@@ -235,22 +234,39 @@
           <h1 class="text-2xl font-semibold" id="titleShow"></h1>
         </div>
 
-        <!-- QR Code Container (Centered and 1:1 Aspect Ratio) -->
-        <div class="flex justify-center items-center">
-          <div
-            id="qrCodeContainer"
-            class="w-48 h-48 flex justify-center items-center"
-          >
-            <!-- QR Code will be generated here -->
-          </div>
-        </div>
+     <!-- === QR Code Container (Wrapper Utama, dibungkus dalam kotak) === -->
+<div class="border-2 border-white rounded-lg p-4 mx-auto mt-4">
 
-        <!-- Text Below QR Code -->
-        <div class="w-full flex justify-center mb-6">
-          <p id="scannedData" class="text-center font-semibold text-white">
-            No QR Code Scanned Yet
-          </p>
-        </div>
+  <!-- === Profile Section: Menampilkan nama, NIM, dan jurusan === -->
+  <div id="profileIShowQR" class="text-white text-center mb-4 hidden">
+    <!-- Diisi dinamis dari JS -->
+    <p class="font-semibold text-lg" id="profileIShowQRName">Nama Mahasiswa</p>
+    <p class="text-sm" id="profileIShowQRDetails">
+      <strong>NIM:</strong> 1234567890<br>
+      <strong>Jurusan:</strong> Teknik Informatika
+    </p>
+  </div>
+
+  <!-- === QR Code Content (qrCodeContainer dan status scan) === -->
+  <div id="qrContent" class="flex flex-col justify-center items-center space-y-3">
+    
+    <!-- Tempat QR Code digenerate -->
+    <div
+      id="qrCodeContainer"
+      class="inline-block flex justify-center items-center border border-gray-400 bg-white"
+    >
+      <!-- QR Code will be generated here -->
+    </div>
+
+    <!-- Keterangan status pemindaian QR -->
+    <p id="scannedDataShowQR" data-default="Silakan scan QR Saya">Silakan scan QR Saya</p>
+
+  </div>
+
+</div>
+
+
+    
       </div>
 
       <!-- Scan Bottom Navigation -->
@@ -414,7 +430,7 @@
       <ul class="w-full flex justify-between items-center ml-3 mr-3">
         <!-- Home Button -->
         <li
-          class="nav-item max-w-20 text-base-0 flex flex-col items-center w-full p-2 rounded-lg cursor-pointer active"
+          class="nav-item max-w-20 text-base-0 flex flex-col items-center w-full p-2 rounded-lg cursor-pointer"
           id="homeBtn"
         >
           <iconify-icon icon="mynaui:home" height="25"></iconify-icon>
@@ -440,5 +456,17 @@
         </li>
       </ul>
     </nav>
+    
+    
+       <!-- Loading Waiting -->
+    <div
+  id="loading-waiting"
+  class="hidden fixed inset-0 z-999 flex flex-col justify-center items-center h-screen text-10xl text-primary-100 gap-4"
+>
+  <iconify-icon
+    icon="eos-icons:three-dots-loading"
+    class="text-9xl animate-pulse"
+  ></iconify-icon>
+</div>
   </body>
 </html>

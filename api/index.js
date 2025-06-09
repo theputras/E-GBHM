@@ -93,7 +93,7 @@ app.post('/checkNIM', checkNIM);
 app.post('/login-egbhm', login);
 app.get('/api/logs/:nim', getLoginHistory);
 app.get('/generate-qr', authenticateTokenWithSession, generateQR );
-app.post('/verify-qr', verifyQR);
+app.post('/verify-qr', authenticateTokenWithSession, verifyQR);
 app.post('/qr-scanned-by', getQRScannedBy);
 app.get("/check-browser", allowOnlyCertainBrowsers);
 app.post('/logout-egbhm', logout, authenticateTokenWithSession, (req, res) => {
@@ -119,4 +119,3 @@ app.post('/logout-all-devices', authenticateTokenWithSession, logoutAllDevices);
 https.createServer(options, app, port).listen(port, () => {
 console.log(`Server running on https://localhost:${port}`);
 });
-

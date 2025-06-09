@@ -2,6 +2,7 @@ const tokenlogin = localStorage.getItem('tokenlogin');
 const greetingEl = document.getElementById("greeting");
 const scanContent = document.getElementById('scan-content');
 let lastActivePage = 'home'; // default 
+// let latestQRStatus = { is_active: true }; // default aktif
 // Bottom navigation and scan content
 const homeBtn = document.getElementById('homeBtn');
 const scanBtn = document.getElementById('scanBtn');
@@ -12,6 +13,7 @@ const showQr = document.getElementById('showQr');
 const dashboardContent = document.getElementById('dashboard-content');
 const showQrContent = document.getElementById('showQrContent');
 const scanQrContent = document.getElementById('scanQrContent');
+const profileIShowQR = document.getElementById('profileIShowQR');
 const backBtn = document.getElementById('backBtn');
 const backBtnScan = document.getElementById('backBtnScan');
     const profileBtn = document.getElementById('profileBtn');
@@ -21,6 +23,7 @@ const logoutAllDeviceBtn = document.getElementById('logoutAllDeviceBtn'); // Tam
 const yesVerifyID = document.getElementById('yesVerifyID');
 const noVerifyID = document.getElementById('noVerifyID');
 const scannedData = document.getElementById('scannedData');
+const scannedDataShowQR = document.getElementById('scannedDataShowQR');
 const browsercheck = document.getElementById('browser-check');
 const browserCheckText = browsercheck.querySelector('p');
 
@@ -67,51 +70,25 @@ if (!(isChrome || isFirefox || isSafari)) {
     logout();
       browserCheckText.textContent = `Terjadi kesalahan: ${err.message}`;
     });
-}
-
-
-    // window.addEventListener('resize', checkScreenSize); // Call checkScreenSize on page load
-    // generateQRCodesFromCSV();
-  window.addEventListener('resize', checkScreenSize);
+  }
   
-  const mediaQuery = window.matchMedia("(max-width: 1024px)");
-  mediaQuery.addEventListener("change", () => {
-    console.log("[DEBUG] Media query triggered!");
-    checkScreenSize();
-  });
-  checkScreenSize();
+ 
+
+  
+  // window.addEventListener('resize', checkScreenSize); // Call checkScreenSize on page load
+  // generateQRCodesFromCSV();
+  // Jalankan saat resize dan awal load
+window.addEventListener("resize", handleResizeView);
+
+  
+
+  initApp();
+ 
   
   
-// Langsung munculin loading screen
-loadingwaiting.classList.remove("hidden");
-
-// Sembunyikan semua halaman utama sementara
-handleNavigation(loadingwaiting, [profileContent, dashboardContent, scanContent, bottomNav, scanNav], null, false, null);
-
-// Saat window selesai load
-window.addEventListener('load', () => {
-  const content = dashboardContent; // atau ganti dengan halaman lain yang mau ditampilkan
-  const hidePages = [profileContent, scanContent, scanNav];
-
-  // Step 1: Tunda 500ms sambil tetap menampilkan loading
-  setTimeout(() => {
-    // Step 2: Pindah ke konten utama
-    handleNavigation(content, hidePages, null, false, null);
-
-    // Step 3: Tambahkan class animasi (smooth masuknya)
-    content.classList.add('page-transition');
-    setTimeout(() => content.classList.add('show'), 10);
-
-    // Step 4: Sembunyikan loading setelah 100ms lagi
-    setTimeout(() => {
-      loadingwaiting.classList.add("hidden");
-      bottomNav.classList.remove("hidden"); // munculkan nav bar
-    }, 100); // boleh diatur lebih pendek agar tidak terasa "delay" panjang
-  }, 1000); // waktu tampil loadingwaiting sebelum pindah
-});
-
-
-    
+  
+  
+  
   // checkScreenSize(); // Panggil saat load awal
   // misal: baca path untuk menentukan halaman aktif
   const path = window.location.pathname;
@@ -131,14 +108,7 @@ window.addEventListener('load', () => {
 
     
     // Jika token tidak ditemukan, langsung redirect ke login
-  if (!tokenlogin) {
-    window.location.href = '/login';
-    return;
-  }
-  
-  if (tokenlogin) {
-    startSilentRefresh();
-  }
+
   
   
   
@@ -297,7 +267,6 @@ logoutAllDeviceBtn.addEventListener('click', function () {
       })
       .then(res => res.json())
       .then(data => {
-        // alert(data.message);
         Swal.fire({
       title: 'Berhasil!',
       text: data.message,
@@ -314,13 +283,23 @@ logoutAllDeviceBtn.addEventListener('click', function () {
         fetchLoginHistory(); // pastikan fungsi ini memuat ulang tabel
         // localStorage.removeItem('tokenlogin');
         // setTimeout(() => {
-        //   window.location.href = '/login';
+        //   window.location.replace("/login"); // Redirect ke halaman login jika belum login 
         // }, 2000);
       })
       .catch(err => {
         logout();
         console.error('Logout all error:', err);
-        alert('Gagal logout dari semua perangkat.');
+          Swal.fire({
+      title: 'Anda Gagal logout dari semua perangkat.',
+      icon: 'error',
+      background: '#262626', // contoh warna latar bg-body-100 Tailwind
+      color: '#ffffff', // warna teks
+      customClass: {
+        title: 'text-white text-2xl',
+        popup: 'rounded-lg',
+        confirmButton: 'bg-primary-100 text-white hover:bg-primary-40',
+      }
+    });
       });
     }
   });
@@ -349,7 +328,7 @@ function logout() {
      // Refresh halaman lalu redirect
      setTimeout(() => {
         location.reload(); // opsional, bisa dikomentari jika ingin efek langsung redirect
-      window.location.href = '/login';
+      window.location.replace("/login"); // Redirect ke halaman login jika belum login 
     }, 500); // kasih delay 500ms biar efek refresh terasa
   })
   .catch(err => {
@@ -358,7 +337,7 @@ function logout() {
     localStorage.removeItem('tokenlogin');
         location.reload();
     setTimeout(() => {
-      window.location.href = '/login';
+      window.location.replace("/login"); // Redirect ke halaman login jika belum login 
     }, 500);
   });
 }
@@ -386,7 +365,7 @@ function btnlogout() {
         localStorage.removeItem('tokenlogin');
         setTimeout(() => {
           location.reload();
-          window.location.href = '/login';
+          window.location.replace("/login"); // Redirect ke halaman login jika belum login 
         }, 500);
       })
       .catch(err => {
@@ -394,7 +373,7 @@ function btnlogout() {
         localStorage.removeItem('tokenlogin');
         location.reload();
         setTimeout(() => {
-          window.location.href = '/login';
+          window.location.replace("/login"); // Redirect ke halaman login jika belum login 
         }, 500);
       });
     }
@@ -406,6 +385,8 @@ function btnlogout() {
 const video = document.getElementById('video');
     let videoStream;
 async function startCamera() {
+
+ 
   try {
         const stream = await navigator.mediaDevices.getUserMedia({
       video: { facingMode: { exact: "environment" } } // minta kamera belakang2
@@ -417,7 +398,18 @@ async function startCamera() {
     console.log('Camera started successfully');
   } catch (err) {
     hasCameraPermission = false;
-    alert('Gagal mengakses kamera: ' + err.message);
+    
+      Swal.fire({
+      title: 'Gagal mengakses kamera',
+      icon: 'error',
+      background: '#262626', // contoh warna latar bg-body-100 Tailwind
+      color: '#ffffff', // warna teks
+      customClass: {
+        title: 'text-white text-2xl',
+        popup: 'rounded-lg',
+        confirmButton: 'bg-primary-100 text-white hover:bg-primary-40',
+      }
+    });
     console.error('Camera access error:', err);
   }
 }
@@ -512,22 +504,82 @@ function stopScanQRCode() {
 }
 
 
+// Function to parse JWT token
+function parseJwt(token) {
+  try {
+    const base64Url = token.split('.')[1];
+    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+    const jsonPayload = decodeURIComponent(
+      atob(base64)
+        .split('')
+        .map((c) => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
+        .join('')
+    );
+    
+    
+    const payload = JSON.parse(jsonPayload);
+    const nim = payload.id || '';
+    const kodeProdi = nim.substring(2, 7); // misal: "41010"
+
+    const prodiMap = {
+      "41010": "S1 Sistem Informasi",
+      "41020": "S1 Teknik Komputer",
+      "42010": "S1 DKV",
+      "43010": "S1 Manajemen",
+      "43020": "S1 Akuntansi",
+      "39010": "D3 Sistem Informasi",
+      "51016": "D4 Produksi Film dan Televisi",
+      "42020": "S1 Desain Produk",
+      "50901": "S1 AI"
+    };
+
+    payload.jurusanParsed = prodiMap[kodeProdi] || 'Jurusan Tidak Dikenali';
+    return payload;
+
+    
+    
+  } catch (e) {
+    console.error('Invalid token', e);
+    return null;
+  }
+}
+
+
 // Handle scanned QR code data
     async function handleQRCodeData(data) {
     
     try {
     
-        const response = await fetch("/verify-qr", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({ qr: data })
+      const response = await fetch("/verify-qr", {
+  method: "POST",
+  headers: {
+    "Content-Type": "application/json",
+    "Authorization": `Bearer ${tokenlogin}`  // ⬅️ Ini penting
+  },
+  body: JSON.stringify({ qr: data })
+});
+
+const result = await response.json();
+
+    if (response.status === 403) {
+      Swal.fire({
+        title: result.message,
+        icon: 'warning',
+        confirmButtonText: 'OK',
+        background: '#262626',
+        color: '#ffffff',
+        customClass: {
+          title: 'text-white text-xl',
+          popup: 'rounded-lg',
+          confirmButton: 'bg-primary-100 text-white hover:bg-primary-40',
+        }
       });
+      return;
+    }
   
-      const result = await response.json();
   
       if (!response.ok) {
+    
         // alert("QR tidak valid");
           // Tambahan: jika QR tidak valid atau sudah digunakan → generate QR baru
     generateAndDisplayQRCode(true);
@@ -536,12 +588,11 @@ function stopScanQRCode() {
       }
   
       // QR Valid dan Data Ditemukan
-      // alert("QR sudah di-scan dan valid");
   stopScanner();
       // Sembunyikan scan-content, tampilkan verify-id-content
       scanContent.classList.add("hidden");
       verifyidcontent.classList.remove("hidden");
-  scannedData.innerText = "Scan berhasil";
+  
 
       // Tampilkan data profil dari result
   document.getElementById("verifyIDName").innerText = result.nama;
@@ -555,8 +606,19 @@ function stopScanQRCode() {
 
   
     } catch (error) {
-      console.error("Gagal verifikasi QR:", error);
-      alert("Terjadi kesalahan saat memverifikasi QR.");
+      
+      
+      Swal.fire({
+      title: 'Terjadi kesalahan saat memverifikasi QR.',
+      icon: 'error',
+      background: '#262626', // contoh warna latar bg-body-100 Tailwind
+      color: '#ffffff', // warna teks
+      customClass: {
+        title: 'text-white text-2xl',
+        popup: 'rounded-lg',
+        confirmButton: 'bg-primary-100 text-white hover:bg-primary-40',
+      }
+    });
     }
   }
 
@@ -612,16 +674,21 @@ async function stopScanner() {
 }
 
  // Function to manage the active state based on the current content
-    function setActiveNavHomeItem(activeBtn) {
-        // Reset all items
-        items.forEach(item => {
-            item.classList.remove("bg-primary-100", "text-secondary-60");
-            item.classList.add("text-base-0"); // Reset to inactive state
-        });
+function setActiveNavHomeItem(activeBtn) {
+  console.log("Setting active nav item:", activeBtn); // Tambahkan ini
+  if (!activeBtn) return;
 
-        // Set the active class for the clicked item
-        activeBtn.classList.add("bg-primary-100", "text-secondary-60");
-    } 
+  items.forEach(item => {
+    item.classList.remove("bg-primary-100", "text-secondary-60", "zoomIn");
+    item.classList.add("text-base-0");
+  });
+
+  activeBtn.classList.remove("text-base-0");
+  activeBtn.classList.add("bg-primary-100", "text-secondary-60", "zoomIn");
+}
+
+
+
     
     function setActiveNavScanItem(activeScanBtn) {
         // // Reset all items
@@ -651,16 +718,23 @@ async function stopScanner() {
 // fungsi silent refresh untuk menjaga sesi tetap aktif
 function startSilentRefresh() {
 if (lastActivePage === 'scan') {
-  const refreshInterval = setInterval(() => {
-    const scanContentVisible = !scanContent.classList.contains('hidden');
-    if (scanContentVisible && lastActivePage === 'scan') {
-      console.log('[AUTO] Refreshing QR...');
+const refreshInterval = setInterval(async () => {
+  const scanContentVisible = !scanContent.classList.contains('hidden');
+  if (scanContentVisible && lastActivePage === 'scan') {
+    const isActive = await generateAndDisplayQRCode(true);
+    
+    if (isActive === false) {
+      console.log('[AUTO] QR tidak aktif, regenerate QR...');
       generateAndDisplayQRCode(true);
     } else {
-      // console.log('[AUTO] Halaman scan tidak aktif, hentikan auto-refresh');
-      clearInterval(refreshInterval);
+      console.log('[AUTO] QR masih aktif, skip refresh...');
     }
-  }, 3000); // setiap 3 detik
+
+  } else {
+    clearInterval(refreshInterval);
+  }
+}, 2000);
+
 } else if (lastActivePage === 'profile') {
 fetchLoginHistory(); // pastikan fungsi ini memuat ulang tabel\
 console.log('[AUTO] Refreshing login history...');
@@ -668,7 +742,7 @@ console.log('[AUTO] Refreshing login history...');
 
   setInterval(async () => {
     if (!tokenlogin) {
-      window.location.href = '/login';
+      window.location.replace("/login"); // Redirect ke halaman login jika belum login 
       return;
     }
 
@@ -685,13 +759,13 @@ console.log('[AUTO] Refreshing login history...');
       // Cek apakah session masih aktif
       if (result.message === 'Sesi telah berakhir, silakan login kembali.') {
         logout();
-        window.location.href = '/login';
+        window.location.replace("/login"); // Redirect ke halaman login jika belum login 
       }
 
     } catch (err) {
       console.error('Silent refresh failed:', err);
       logout();
-      window.location.href = '/login';
+      window.location.replace("/login"); // Redirect ke halaman login jika belum login 
     }
   }, 5000); // Setiap 5 detik
 }
@@ -1045,7 +1119,6 @@ console.log("Logout ID: ", logId);
     
         const result = await res.json();
         if (res.ok) {
-          // alert('Logout berhasil untuk sesi tersebut.');
           
               Swal.fire({
       title: 'Berhasil!',
@@ -1061,11 +1134,32 @@ console.log("Logout ID: ", logId);
     });
           fetchLoginHistory(); // pastikan fungsi ini memuat ulang tabel
         } else {
-          alert(result.message || 'Logout gagal.');
+          
+    Swal.fire({
+      title: result.message || 'Logout gagal.',
+      icon: 'error',
+      background: '#262626', // contoh warna latar bg-body-100 Tailwind
+      color: '#ffffff', // warna teks
+      customClass: {
+        title: 'text-white text-2xl',
+        popup: 'rounded-lg',
+        confirmButton: 'bg-primary-100 text-white hover:bg-primary-40',
+      }
+    });
         }
       } catch (error) {
         console.error('Logout error:', error);
-        alert('Terjadi kesalahan saat logout.');
+    Swal.fire({
+      title: 'Terjadi kesalahan saat logout.',
+      icon: 'error',
+      background: '#262626', // contoh warna latar bg-body-100 Tailwind
+      color: '#ffffff', // warna teks
+      customClass: {
+        title: 'text-white text-2xl',
+        popup: 'rounded-lg',
+        confirmButton: 'bg-primary-100 text-white hover:bg-primary-40',
+      }
+    });
       }
       
     
@@ -1163,126 +1257,220 @@ updateLoginHistory();
 // }
 
 
+
 // Function to generate and display QR Code
 async function generateAndDisplayQRCode(forceNew = false) {
-//  console.log('[DEBUG] generateAndDisplayQRCode() dipanggil, forceNew:', forceNew);
+
+ console.log('[DEBUG] generateAndDisplayQRCode() dipanggil, forceNew:', forceNew);
   
   // console.log('[DEBUG] Token JWT:', token);
+ 
+checkToken();
+try {
+    const qrContainer = document.getElementById('qrCodeContainer');
+    
+    
 
-  if (!tokenlogin) {
-    alert('Anda belum login.');
-    return;
-  }
-
-  try {
+    
     const response = await fetch('/generate-qr', {
       method: 'GET',
       headers: {
         'Authorization': `Bearer ${tokenlogin}`
       }
     });
+    const responseData = await response.json(); // ambil data response JSON
+
 // console.log('[DEBUG] Status response:', response.status);
     if (!response.ok) {
-      const errorRes = await response.json();
-      // console.error('[DEBUG] Error response JSON:', errorRes);
-      throw new Error(errorRes.message || 'Gagal generate QR');
+      throw new Error(responseData.message || 'Gagal generate QR');
     }
 
-    const responseData = await response.json(); // ambil data response JSON
+    if (!responseData.is_active) {
+      console.log('[DEBUG] QR tidak aktif → regenerate...');
+      scannedDataShowQR.innerText = "Scan berhasil";
+      handleloading(true);
+      qrContainer.innerHTML = '';
+      setTimeout(() => {
+        scannedDataShowQR.innerText = scannedDataShowQR.dataset.default;
+        generateAndDisplayQRCode(true);
+      }, 2000);
+      return false; // ⬅️ return false karena tidak aktif
+    }
+
     // console.log('[DEBUG] is_active:', responseData.qr);
-        // Jika QR lama dan sudah tidak aktif/terpakai, minta QR baru
-if (responseData.status === 'existing') {
-  // console.log('[DEBUG] QR status = existing');
-  // console.log('[DEBUG] used:', responseData.used);
-  // console.log('[DEBUG] is_active:', responseData.is_active);
-  // console.log('[DEBUG] is_active:', responseData.qr);
-
-  if (!forceNew && (!responseData.is_active || responseData.used)) {
-    // console.log('[DEBUG] Kondisi QR lama tidak valid → regenerate...');
-    return generateAndDisplayQRCode(true);
-  }
-
-  if (forceNew && (!responseData.is_active || responseData.used)) {
-    console.warn('[ABORT] Loop pembuatan QR dihentikan: QR baru tetap tidak valid.');
-    alert('Gagal mendapatkan QR baru yang valid. Silakan refresh halaman.');
-    return;
-  }
+    // Jika QR lama dan sudah tidak aktif/terpakai, minta QR baru
+  profileIShowQR.classList.remove('hidden');
+    const decoded = parseJwt(tokenlogin);
+if (decoded) {
+  document.getElementById("profileIShowQRName").innerText = decoded.nama;
+  document.getElementById("profileIShowQRDetails").innerHTML = `
+    <strong>NIM:</strong> ${decoded.id}<br>
+    <strong>Jurusan:</strong> ${decoded.jurusan}
+  `;
 }
 
     
+   const qrCodeData = responseData.qr;
+    const canvas = document.createElement('canvas');
+    QRCode.toCanvas(canvas, qrCodeData, { width: 300 }, function (error) {
+      if (error) console.error(error);
+
+      qrContainer.innerHTML = '';
+      qrContainer.appendChild(canvas);
+      handleloading(false);
+    });
     
-    // console.log('[DEBUG] Response Data:', responseData);
-    const qrCodeData = responseData.qr; // pastikan server mengembalikan properti ini
-    // console.log('[DEBUG] QR Code Data:', qrCodeData);
-
-  const canvas = document.createElement('canvas');
-QRCode.toCanvas(canvas, qrCodeData, { width: 300 }, function (error) {
-  if (error) console.error(error);
-
-  const qrContainer = document.getElementById('qrCodeContainer');
-qrContainer.innerHTML = ''; // selalu bersihkan QR lama
-  // [FIX] Tambahkan pengecekan untuk forceNew agar canvas benar-benar di-refresh
-  if (forceNew) {
-    // console.log('[DEBUG] ForceNew aktif: QR lama diganti');
-    qrContainer.innerHTML = ''; // hapus QR lama
-  }
-
-  qrContainer.appendChild(canvas); // tambahkan QR baru
-});
-
+    return responseData.is_active; // ⬅️ return status aktif QR
   } catch (err) {
     console.error('Error:', err);
-    alert(err.message);
+    handleloading(false); // ⬅️ QR selesai digenerate → sembunyikan loading
+    
+                 Swal.fire({
+      title: err.message,
+      icon: 'error',
+      background: '#262626', // contoh warna latar bg-body-100 Tailwind
+      color: '#ffffff', // warna teks
+      customClass: {
+        title: 'text-white text-2xl',
+        popup: 'rounded-lg',
+        confirmButton: 'bg-primary-100 text-white hover:bg-primary-40',
+      }
+    });
+    
+    return false;
   }
 }
 
 
 
 // Function untuk mengecek ukuran layar dan menyesuaikan tampilan
-function checkScreenSize() {
+
+
+function handleResizeView() {
+
+  // Jangan ganggu kalau masih di loading screen
+  if (!loadingwaiting.classList.contains('hidden')) {
+    return;
+  }
   const width = window.innerWidth;
-  const height = window.innerHeight;
-  console.log("[DEBUG] Window Width:", width);
-  console.log("[DEBUG] Window Height:", height);
-  console.log("[DEBUG] Last Active Page:", lastActivePage);
+    console.log("[DEBUG] Window Width:", width);
   
-  // Hindari error kalau elemen belum tersedia
-  if (!dashboardContent || !scanContent || !profileContent) return;
+  console.log("[DEBUG] Last Active Page:", lastActivePage);
+
   if (width >= 1024) {
-    mobilewarning.classList.remove("hidden");
-    dashboardContent.classList.add("hidden");
-    scanContent.classList.add("hidden");
-    profileContent.classList.add("hidden");
-    bottomNav.classList.add("hidden");
-    scanNav.classList.add("hidden");
+    // Ukuran desktop — tampilkan warning saja
+    handleNavigation(mobilewarning, [dashboardContent, scanContent, profileContent, bottomNav, scanNav], null, false, null);
+    lastActivePage = "mobile-warning";
   } else {
+    // Ukuran mobile — tampilkan kembali halaman terakhir yang aktif
     mobilewarning.classList.add("hidden");
 
-    // Pastikan semuanya disiapkan dulu
-    dashboardContent.classList.add("hidden");
-    scanContent.classList.add("hidden");
-    profileContent.classList.add("hidden");
-
-    // Tampilkan halaman sesuai lastActivePage
     if (lastActivePage === 'home') {
-      handleNavigation(dashboardContent, [scanContent, scanNav, profileContent],null, true, homeBtn);
-
-
+      handleNavigation(dashboardContent, [scanContent, scanNav, profileContent], null, false, homeBtn);
     } else if (lastActivePage === 'scan') {
-      handleNavigation([scanContent, scanNav], [dashboardContent, profileContent]);
-
-
+      handleNavigation([scanContent, scanNav], [dashboardContent, profileContent], null, false, null);
     } else if (lastActivePage === 'profile') {
-     handleNavigation(profileContent, [dashboardContent, scanContent, scanNav], stopCamera, true, profileBtn);
-
-
-    }else if (lastActivePage === 'browser-check') {
-      handleNavigation([dashboardContent, bottomNav], [profileContent, scanContent, scanNav, profileContent], null, null, null);
-    //   bottomNav.classList.add("hidden");
-    //   scanNav.classList.add("hidden");
+      handleNavigation(profileContent, [dashboardContent, scanContent, scanNav], stopCamera, false, profileBtn);
+    } else {
+      // default ke dashboard kalau nggak ada state
+      handleNavigation(dashboardContent, [scanContent, profileContent, scanNav], null, false, homeBtn);
+      lastActivePage = "home";
     }
   }
 }
 
+function hideAllMainSections() {
+  const sections = [profileContent, dashboardContent, scanContent, bottomNav, scanNav];
+  sections.forEach(section => section.classList.add('hidden'));
+}
 
+function showLoading() {
+  loadingwaiting.classList.remove('hidden');
+}
+
+function hideLoading() {
+  loadingwaiting.classList.add('hidden');
+}
+
+function showInitialPage() {
+  const mainContent = dashboardContent;
+  const pagesToHide = [profileContent, scanContent, scanNav];
+
+      handleNavigation(mainContent, pagesToHide, null, false, homeBtn); // ✅ kasih homeBtn
+
+
+  mainContent.classList.add('page-transition');
+  setTimeout(() => mainContent.classList.add('show'), 10);
+
+  setTimeout(() => {
+    hideLoading();
+    bottomNav.classList.remove('hidden');
+  }, 100);
+}
+
+// Main init flow
+function initApp() {
+  showLoading();       // Tampilkan animasi loading
+  hideAllMainSections(); // Sembunyikan semua tampilan utama
+
+  window.addEventListener('load', () => {
+    setTimeout(showInitialPage, 1000); // Setelah loading 1 detik, tampilkan konten utama
+  });
+}
+
+
+function initApp() {
+  showLoading();
+  if (!tokenlogin) {
+    console.warn('Token tidak ditemukan, redirect ke halaman login');
+    setTimeout(() => {
+      
+      // window.location.replace = '/login'; 
+      window.location.replace("/login"); // Redirect ke halaman login jika belum login 
+    }, 1000);
+    return; // Hentikan eksekusi initApp lebih lanjut
+  }
+
+  // Jika sudah login, mulai refresh token silent
+  startSilentRefresh();
+
+  // ...lanjutan dari initApp lainnya seperti inisialisasi halaman awal
+  hideAllMainSections();
+
+  window.addEventListener('load', () => {
+    setTimeout(showInitialPage, 1000); // Setelah loading 1 detik, tampilkan konten utama
+    // setActiveNavHomeItem(homeBtn); // <- pastikan ini juga aktifin tombol home
+  });
+
+  // Misal: tambahkan event listener lain
+  // homeBtn.addEventListener('click', ...)
+}
+
+
+function checkToken(){
+if (!tokenlogin) {
+    
+             Swal.fire({
+      title: 'Anda belum login.',
+      icon: 'error',
+      background: '#262626', // contoh warna latar bg-body-100 Tailwind
+      color: '#ffffff', // warna teks
+      customClass: {
+        title: 'text-white text-2xl',
+        popup: 'rounded-lg',
+        confirmButton: 'bg-primary-100 text-white hover:bg-primary-40',
+      }
+    });
+    return;
+  }
+}
+
+
+function handleloading(isShow = false) {
+  if (isShow) {
+    loadingwaiting.classList.remove("hidden");
+  } else {
+    loadingwaiting.classList.add("hidden");
+  }
+}
 

@@ -122,10 +122,16 @@ const verifyQR = async (req, res) => {
     }
 
     const userIdFromQR = decoded.user_id;
+    const scannerId = req.user.id;
     
-   if (!userIdFromQR) {
-  return res.status(400).json({ message: 'Token QR tidak valid, user_id tidak ditemukan.' });
-}
+  
+    if (!userIdFromQR || !scannerId) {
+      return res.status(400).json({ message: 'Token QR atau token login tidak valid.' });
+    }
+
+    if (userIdFromQR === scannerId) {
+      return res.status(403).json({ message: 'Tidak dapat scan QR milik sendiri.' });
+    }
 
 const result = await db.query(
   'SELECT * FROM qr_session WHERE id_qr = $1 AND user_id = $2',
@@ -153,18 +159,20 @@ const result = await db.query(
   SET is_active = FALSE 
   WHERE id_qr = $1
 `, [token]);
-    const userId = decoded.user_id;
+
+
+    
       // Ambil data mahasiswa berdasarkan user_id
     const mahasiswaSearch = await db.query(`
       SELECT id_mahasiswa, nama, jurusan
       FROM mahasiswa
       WHERE id_mahasiswa = $1
-    `, [userId]);
+    `, [userIdFromQR]);
     
-    await db.query(`
-  INSERT INTO scan_logs (qr_id, scanner_id, scanned_at)
-  VALUES ($1, $2, NOW())
-`, [token, userId]); // req.user.id adalah yang scan
+   await db.query(`
+      INSERT INTO scan_logs (qr_id, scanner_id, scanned_at)
+      VALUES ($1, $2, NOW())
+    `, [token, scannerId]);// req.user.id adalah yang scan
 
     const rows = mahasiswaSearch.rows; // ini array of rows
     

@@ -1,23 +1,22 @@
 const tokenlogin = localStorage.getItem('tokenlogin');
 const greetingEl = document.getElementById("greeting");
-const scanContent = document.getElementById('scan-content');
 let lastActivePage = 'home'; // default 
-// let latestQRStatus = { is_active: true }; // default aktif
-// Bottom navigation and scan content
+let isAppReady = false;
 const homeBtn = document.getElementById('homeBtn');
 const scanBtn = document.getElementById('scanBtn');
-const bottomNav = document.getElementById('bottom-nav');
-const scanNav = document.getElementById('scan-nav');
 const scanQr = document.getElementById('scanQr');
 const showQr = document.getElementById('showQr');
-const dashboardContent = document.getElementById('dashboard-content');
 const showQrContent = document.getElementById('showQrContent');
 const scanQrContent = document.getElementById('scanQrContent');
+const scanContent = document.getElementById('scan-content');
+const bottomNav = document.getElementById('bottom-nav');
+const scanNav = document.getElementById('scan-nav');
+const dashboardContent = document.getElementById('dashboard-content');
+const profileContent = document.getElementById('profile-content');
 const profileIShowQR = document.getElementById('profileIShowQR');
 const backBtn = document.getElementById('backBtn');
 const backBtnScan = document.getElementById('backBtnScan');
     const profileBtn = document.getElementById('profileBtn');
-const profileContent = document.getElementById('profile-content');
 const verifyidcontent = document.getElementById('verify-id-content');
 const logoutAllDeviceBtn = document.getElementById('logoutAllDeviceBtn'); // Tambahkan elemen logoutAllDeviceBtn
 const yesVerifyID = document.getElementById('yesVerifyID');
@@ -29,6 +28,7 @@ const browserCheckText = browsercheck.querySelector('p');
 
 const mobilewarning = document.getElementById('mobile-warning');
 const loadingwaiting = document.getElementById('loading-waiting');
+const loadShowQR = document.getElementById('loadShowQR');
 
 const logoutBtn = document.getElementById('logoutBtn');
 const scannerOverlay = document.getElementById('scanner-overlay');
@@ -47,6 +47,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
 // Check browser support
 if (!(isChrome || isFirefox || isSafari)) {
+handleloading(true);
   lastActivePage = 'browser-check';
   fetch("/check-browser")
     .then(response => response.json())
@@ -75,26 +76,24 @@ if (!(isChrome || isFirefox || isSafari)) {
  
 
   
-  // window.addEventListener('resize', checkScreenSize); // Call checkScreenSize on page load
-  // generateQRCodesFromCSV();
-  // Jalankan saat resize dan awal load
+  
+  initApp();
 window.addEventListener("resize", handleResizeView);
 
   
 
-  initApp();
  
   
   
   
   
   
-  // checkScreenSize(); // Panggil saat load awal
+
   // misal: baca path untuk menentukan halaman aktif
-  const path = window.location.pathname;
-  if (path.includes("profile")) lastActivePage = 'profile';
-  else if (path.includes("scan")) lastActivePage = 'scan';
-  else lastActivePage = 'home';
+  // const path = window.location.pathname;
+  // if (path.includes("profile")) lastActivePage = 'profile';
+  // else if (path.includes("scan")) lastActivePage = 'scan';
+  // else lastActivePage = 'home';
 
   
     
@@ -1260,6 +1259,12 @@ updateLoginHistory();
 
 // Function to generate and display QR Code
 async function generateAndDisplayQRCode(forceNew = false) {
+if (!forceNew) {
+console.log('[DEBUG] generateAndDisplayQRCode() dipanggil, tidak forceNew');
+handleloading(true); 
+loadShowQR.classList.remove("hidden");
+}
+handleloading(false); 
 
  console.log('[DEBUG] generateAndDisplayQRCode() dipanggil, forceNew:', forceNew);
   
@@ -1289,6 +1294,7 @@ try {
       console.log('[DEBUG] QR tidak aktif → regenerate...');
       scannedDataShowQR.innerText = "Scan berhasil";
       handleloading(true);
+      loadShowQR.classList.remove("hidden");
       qrContainer.innerHTML = '';
       setTimeout(() => {
         scannedDataShowQR.innerText = scannedDataShowQR.dataset.default;
@@ -1312,19 +1318,21 @@ if (decoded) {
     
    const qrCodeData = responseData.qr;
     const canvas = document.createElement('canvas');
+    loadShowQR.classList.remove("hidden");
     QRCode.toCanvas(canvas, qrCodeData, { width: 300 }, function (error) {
       if (error) console.error(error);
 
       qrContainer.innerHTML = '';
       qrContainer.appendChild(canvas);
       handleloading(false);
+      loadShowQR.classList.add("hidden");
     });
     
     return responseData.is_active; // ⬅️ return status aktif QR
   } catch (err) {
     console.error('Error:', err);
     handleloading(false); // ⬅️ QR selesai digenerate → sembunyikan loading
-    
+    loadShowQR.classList.add("hidden");
                  Swal.fire({
       title: err.message,
       icon: 'error',
@@ -1349,7 +1357,8 @@ if (decoded) {
 function handleResizeView() {
 
   // Jangan ganggu kalau masih di loading screen
-  if (!loadingwaiting.classList.contains('hidden')) {
+  if (!isAppReady) {
+    console.log('[DEBUG] App belum siap, skip resize handler...');
     return;
   }
   const width = window.innerWidth;
@@ -1371,18 +1380,23 @@ function handleResizeView() {
       handleNavigation([scanContent, scanNav], [dashboardContent, profileContent], null, false, null);
     } else if (lastActivePage === 'profile') {
       handleNavigation(profileContent, [dashboardContent, scanContent, scanNav], stopCamera, false, profileBtn);
-    } else {
-      // default ke dashboard kalau nggak ada state
-      handleNavigation(dashboardContent, [scanContent, profileContent, scanNav], null, false, homeBtn);
-      lastActivePage = "home";
-    }
+    } 
   }
 }
 
 function hideAllMainSections() {
   const sections = [profileContent, dashboardContent, scanContent, bottomNav, scanNav];
-  sections.forEach(section => section.classList.add('hidden'));
+
+  sections.forEach(section => {
+    if (!section) {
+      console.log('[HIDE] Element belum ada:', section);
+    } else {
+      section.classList.add('hidden');
+      console.log('[HIDE] Menyembunyikan:', section.id);
+    }
+  });
 }
+
 
 function showLoading() {
   loadingwaiting.classList.remove('hidden');
@@ -1393,6 +1407,7 @@ function hideLoading() {
 }
 
 function showInitialPage() {
+
   const mainContent = dashboardContent;
   const pagesToHide = [profileContent, scanContent, scanNav];
 
@@ -1405,38 +1420,33 @@ function showInitialPage() {
   setTimeout(() => {
     hideLoading();
     bottomNav.classList.remove('hidden');
+    
+    // Tandai bahwa aplikasi sudah siap
+    isAppReady = true;
   }, 100);
 }
 
 // Main init flow
 function initApp() {
-  showLoading();       // Tampilkan animasi loading
-  hideAllMainSections(); // Sembunyikan semua tampilan utama
 
-  window.addEventListener('load', () => {
-    setTimeout(showInitialPage, 1000); // Setelah loading 1 detik, tampilkan konten utama
-  });
-}
-
-
-function initApp() {
+  
   showLoading();
-  if (!tokenlogin) {
-    console.warn('Token tidak ditemukan, redirect ke halaman login');
-    setTimeout(() => {
-      
-      // window.location.replace = '/login'; 
-      window.location.replace("/login"); // Redirect ke halaman login jika belum login 
-    }, 1000);
-    return; // Hentikan eksekusi initApp lebih lanjut
-  }
-
+  hideAllMainSections();
+  
   // Jika sudah login, mulai refresh token silent
   startSilentRefresh();
 
   // ...lanjutan dari initApp lainnya seperti inisialisasi halaman awal
-  hideAllMainSections();
 
+  if (!tokenlogin) {
+  console.warn('Token tidak ditemukan, redirect ke halaman login');
+  setTimeout(() => {
+    
+    // window.location.replace = '/login'; 
+    window.location.replace("/login"); // Redirect ke halaman login jika belum login 
+  }, 1000);
+  return; // Hentikan eksekusi initApp lebih lanjut
+}
   window.addEventListener('load', () => {
     setTimeout(showInitialPage, 1000); // Setelah loading 1 detik, tampilkan konten utama
     // setActiveNavHomeItem(homeBtn); // <- pastikan ini juga aktifin tombol home

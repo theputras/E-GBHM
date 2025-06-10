@@ -108,7 +108,16 @@
     </script>
   </head>
   <body class="bg-body-100 h-10 text-white">
- 
+   <!-- Loading Waiting -->
+    <div
+  id="loading-waiting"
+  class="hidden fixed inset-0 z-999 flex flex-col justify-center items-center h-screen text-10xl text-primary-100 gap-4"
+>
+  <iconify-icon
+    icon="eos-icons:three-dots-loading"
+    class="text-9xl animate-pulse"
+  ></iconify-icon>
+</div>
     <!-- Mobile Warning -->
     <div
       id="mobile-warning"
@@ -128,7 +137,7 @@
     <!-- Dashboard Content -->
     <main
       id="dashboard-content"
-      class="flex flex-col pb-20 overflow-y-auto min-h-screen"
+      class="hidden flex flex-col pb-20 overflow-y-auto min-h-screen"
     >
       <!-- Navbar -->
       <div class="mt-4 py-4 px-6 text-left ml-4">
@@ -458,15 +467,6 @@
     </nav>
     
     
-       <!-- Loading Waiting -->
-    <div
-  id="loading-waiting"
-  class="hidden fixed inset-0 z-999 flex flex-col justify-center items-center h-screen text-10xl text-primary-100 gap-4"
->
-  <iconify-icon
-    icon="eos-icons:three-dots-loading"
-    class="text-9xl animate-pulse"
-  ></iconify-icon>
-</div>
+     
   </body>
 </html>

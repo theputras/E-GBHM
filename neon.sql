@@ -23,11 +23,12 @@ CREATE TABLE user_logs (
     user_id VARCHAR(15) NOT NULL REFERENCES mahasiswa(id_mahasiswa),
     ip_address VARCHAR(45),
     device_info TEXT,
-    login_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    logout_time TIMESTAMP,
+    login_time TIMESTAMPTZ DEFAULT (CURRENT_TIMESTAMP AT TIME ZONE 'Asia/Jakarta'),
+    logout_time TIMESTAMPTZ,
     is_active BOOLEAN DEFAULT TRUE,
     token TEXT
 );
+
 
 
 

@@ -2,8 +2,7 @@ const tokenlogin = localStorage.getItem('tokenlogin');
 const greetingEl = document.getElementById("greeting");
 const scanContent = document.getElementById('scan-content');
 let lastActivePage = 'home'; // default 
-// let latestQRStatus = { is_active: true }; // default aktif
-// Bottom navigation and scan content
+let isAppReady = false;
 const homeBtn = document.getElementById('homeBtn');
 const scanBtn = document.getElementById('scanBtn');
 const bottomNav = document.getElementById('bottom-nav');
@@ -78,11 +77,12 @@ if (!(isChrome || isFirefox || isSafari)) {
   // window.addEventListener('resize', checkScreenSize); // Call checkScreenSize on page load
   // generateQRCodesFromCSV();
   // Jalankan saat resize dan awal load
-window.addEventListener("resize", handleResizeView);
+  hideAllMainSections(); 
+  initApp();
+// window.addEventListener("resize", handleResizeView);
 
   
 
-  initApp();
  
   
   
@@ -927,7 +927,7 @@ if (pageToShow.id === "scan-content") {
 // Fungsi untuk menampilkan pesan selamat datang
 function grettingMessage() {
 if (tokenlogin) {
-  const payload = parseJwt(tokenlogin);
+  const payload = JSON.parse(atob(tokenlogin.split('.')[1]));
   const nim = payload.id;
   const nama = payload.nama;
   const jurusan2 = payload.jurusan;
@@ -974,7 +974,7 @@ function updateProfileDetailsFromToken() {
 
   if (!tokenlogin) return;
 
-  const payload = parseJwt(tokenlogin);
+  const payload = JSON.parse(atob(tokenlogin.split('.')[1]));
   const nama = payload.nama;
   const nim = payload.id;
   const jurusan2 = payload.jurusan;
@@ -1008,7 +1008,7 @@ document.getElementById('profileName').textContent = nama;
 function updateLoginHistory() {
 
   if (!tokenlogin) return;
-const payload = parseJwt(tokenlogin);
+const payload = JSON.parse(atob(tokenlogin.split('.')[1]));
   const nim = payload.id;
 
   const rowsPerPage = 10;
@@ -1349,7 +1349,8 @@ if (decoded) {
 function handleResizeView() {
 
   // Jangan ganggu kalau masih di loading screen
-  if (!loadingwaiting.classList.contains('hidden')) {
+  if (!isAppReady) {
+    console.log('[DEBUG] App belum siap, skip resize handler...');
     return;
   }
   const width = window.innerWidth;
@@ -1371,18 +1372,23 @@ function handleResizeView() {
       handleNavigation([scanContent, scanNav], [dashboardContent, profileContent], null, false, null);
     } else if (lastActivePage === 'profile') {
       handleNavigation(profileContent, [dashboardContent, scanContent, scanNav], stopCamera, false, profileBtn);
-    } else {
-      // default ke dashboard kalau nggak ada state
-      handleNavigation(dashboardContent, [scanContent, profileContent, scanNav], null, false, homeBtn);
-      lastActivePage = "home";
-    }
+    } 
   }
 }
 
 function hideAllMainSections() {
   const sections = [profileContent, dashboardContent, scanContent, bottomNav, scanNav];
-  sections.forEach(section => section.classList.add('hidden'));
+
+  sections.forEach(section => {
+    if (!section) {
+      console.log('[HIDE] Element belum ada:', section);
+    } else {
+      section.classList.add('hidden');
+      console.log('[HIDE] Menyembunyikan:', section.id);
+    }
+  });
 }
+
 
 function showLoading() {
   loadingwaiting.classList.remove('hidden');
@@ -1393,6 +1399,7 @@ function hideLoading() {
 }
 
 function showInitialPage() {
+
   const mainContent = dashboardContent;
   const pagesToHide = [profileContent, scanContent, scanNav];
 
@@ -1405,38 +1412,33 @@ function showInitialPage() {
   setTimeout(() => {
     hideLoading();
     bottomNav.classList.remove('hidden');
+    
+    // Tandai bahwa aplikasi sudah siap
+    isAppReady = true;
   }, 100);
 }
 
 // Main init flow
 function initApp() {
-  showLoading();       // Tampilkan animasi loading
-  hideAllMainSections(); // Sembunyikan semua tampilan utama
 
-  window.addEventListener('load', () => {
-    setTimeout(showInitialPage, 1000); // Setelah loading 1 detik, tampilkan konten utama
-  });
-}
-
-
-function initApp() {
+  
   showLoading();
-  if (!tokenlogin) {
-    console.warn('Token tidak ditemukan, redirect ke halaman login');
-    setTimeout(() => {
-      
-      // window.location.replace = '/login'; 
-      window.location.replace("/login"); // Redirect ke halaman login jika belum login 
-    }, 1000);
-    return; // Hentikan eksekusi initApp lebih lanjut
-  }
-
+  hideAllMainSections();
+  
   // Jika sudah login, mulai refresh token silent
   startSilentRefresh();
 
   // ...lanjutan dari initApp lainnya seperti inisialisasi halaman awal
-  hideAllMainSections();
 
+  if (!tokenlogin) {
+  console.warn('Token tidak ditemukan, redirect ke halaman login');
+  setTimeout(() => {
+    
+    // window.location.replace = '/login'; 
+    window.location.replace("/login"); // Redirect ke halaman login jika belum login 
+  }, 1000);
+  return; // Hentikan eksekusi initApp lebih lanjut
+}
   window.addEventListener('load', () => {
     setTimeout(showInitialPage, 1000); // Setelah loading 1 detik, tampilkan konten utama
     // setActiveNavHomeItem(homeBtn); // <- pastikan ini juga aktifin tombol home

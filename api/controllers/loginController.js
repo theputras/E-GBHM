@@ -30,6 +30,11 @@ async function checkNIM(req, res) {
 async function login(req, res) {
   const { nim, password } = req.body;
 
+  let mahasiswa;
+  let tokenlogin;
+  let signature;
+  let session_id = req.sessionID;
+
   try {
     const result = await db.query('SELECT * FROM mahasiswa WHERE id_mahasiswa = $1', [nim]);
     const rows = result.rows;
@@ -38,7 +43,7 @@ async function login(req, res) {
       return res.status(404).json({ status: 'error', message: 'NIM tidak ditemukan' });
     }
 
-    const mahasiswa = rows[0];
+    mahasiswa = rows[0];
 
     if (!mahasiswa.password || mahasiswa.password.trim() === '') {
       return res.status(403).json({ status: 'no_password', message: 'Mahasiswa belum memiliki password' });
@@ -48,30 +53,40 @@ async function login(req, res) {
     if (!match) {
       return res.status(401).json({ status: 'error', message: 'Password salah' });
     }
-    
-    const session_id = req.sessionID;
-const tokenlogin = jwt.sign({
-  id: mahasiswa.id_mahasiswa,
-  nama: mahasiswa.nama,
-  jurusan: mahasiswa.jurusan,
-  session_id: session_id  // ⬅️ ini penting!
-}, JWTSECRET, { expiresIn: '24h' });
 
-const signature = tokenlogin.split('.')[2];
-    const ip = req.ip;
-    const device = req.get('User-Agent');
+    // ✅ Kalau sampai sini aman, buat token
+    tokenlogin = jwt.sign({
+      id: mahasiswa.id_mahasiswa,
+      nama: mahasiswa.nama,
+      jurusan: mahasiswa.jurusan,
+      session_id: session_id
+    }, JWTSECRET, { expiresIn: '24h' });
+
+    signature = tokenlogin.split('.')[2];
+
+    // Set session
     req.session.mahasiswa = {
       id: mahasiswa.id_mahasiswa,
       name: mahasiswa.nama,
       jurusan: mahasiswa.jurusan
     };
 
-    await db.query(`
-      INSERT INTO user_logs (id, session_id, user_id, ip_address, device_info)
-      VALUES ($1, $2, $3, $4, $5)
-    `, [signature, session_id, mahasiswa.id_mahasiswa, ip, device]);
+  } catch (err) {
+    console.error('Login gagal (validasi/token):', err);
+    return res.status(500).json({ status: 'error', message: 'Kesalahan server' });
+  }
 
-    console.log(`[DEBUG] Token berhasil dibuat untuk ${nim}: ${tokenlogin}`);
+  // ✅ Kalau sampai sini 100% valid dan aman → baru simpan ke user_logs
+  try {
+    const ip = req.ip;
+    const device = req.get('User-Agent');
+
+    await db.query(`
+      INSERT INTO user_logs (id, session_id, user_id, ip_address, device_info, token)
+      VALUES ($1, $2, $3, $4, $5, $6)
+    `, [signature, session_id, mahasiswa.id_mahasiswa, ip, device, tokenlogin]);
+
+    console.log(`[DEBUG] Token berhasil dibuat untuk ${mahasiswa.id_mahasiswa}: ${tokenlogin}`);
 
     return res.status(200).json({
       status: 'success',
@@ -85,10 +100,11 @@ const signature = tokenlogin.split('.')[2];
     });
 
   } catch (err) {
-    console.error('Login mahasiswa error:', err);
-    return res.status(500).json({ status: 'error', message: 'Kesalahan server' });
+    console.error('Gagal menyimpan log login:', err);
+    return res.status(500).json({ status: 'error', message: 'Gagal menyimpan log login' });
   }
 }
+
 
 
 //Mengambil data histori login

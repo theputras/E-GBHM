@@ -1369,7 +1369,7 @@ function handleResizeView() {
   if (width >= 1024) {
     // Ukuran desktop — tampilkan warning saja
     handleNavigation(mobilewarning, [dashboardContent, scanContent, profileContent, bottomNav, scanNav], null, false, null);
-    lastActivePage = "mobile-warning";
+    // lastActivePage = "mobile-warning";
   } else {
     // Ukuran mobile — tampilkan kembali halaman terakhir yang aktif
     mobilewarning.classList.add("hidden");

@@ -11,7 +11,7 @@ const port = process.env.PORT || 3000;
 const { checkNIM, login, getLoginHistory, logout, logoutTableHistoryUser, logoutAllDevices  } = require('./controllers/loginController');
 const { generateQR, verifyQR, getQRScannedBy } = require('./controllers/qrController');
 const { authenticateTokenWithSession } = require('./controllers/secure');
-
+const { createItem, getItems, getItemById, updateItem, deleteItem } = require('./controllers/mobileController');
 
 const app = express();
 app.set('trust proxy', true); // 🟢 PENTING! Tambahkan ini untuk baca IP dari reverse proxy
@@ -57,11 +57,11 @@ app.use(session({
 }));
 
 // Define the path to the SSL certificate files (use absolute paths based on your system)
-// const options = {
-//     key: fs.readFileSync(path.join('C:', 'laragon', 'etc', 'ssl', 'laragon.key')),  // Private Key
-//     cert: fs.readFileSync(path.join('C:', 'laragon', 'etc', 'ssl', 'laragon.crt')),  // Certificate
-//     ca: fs.readFileSync(path.join('C:', 'laragon', 'etc', 'ssl', 'cacert.pem'))      // CA Certificate (optional)
-// };
+const options = {
+    key: fs.readFileSync(path.join('C:', 'laragon', 'etc', 'ssl', 'laragon.key')),  // Private Key
+    cert: fs.readFileSync(path.join('C:', 'laragon', 'etc', 'ssl', 'laragon.crt')),  // Certificate
+    ca: fs.readFileSync(path.join('C:', 'laragon', 'etc', 'ssl', 'cacert.pem'))      // CA Certificate (optional)
+};
 
 
 
@@ -108,14 +108,20 @@ app.get('/check-session', authenticateTokenWithSession, (req, res) => {
 app.post('/logout-all-devices', authenticateTokenWithSession, logoutAllDevices);
 
 
+app.post('/mobile/create-item', createItem);
+app.get('/mobile/items', getItems);
+app.get('/mobile/items/:id', getItemById);
+app.put('`/mobile/items/:id`', updateItem);
+app.delete('/mobile/items/:id', deleteItem);
+
 
 
 // Start server normally (for local testing or Vercel)
-app.listen(port, () => {
-    console.log(`Server running on https://localhost:${port}`);
-});
+// app.listen(port, () => {
+//     console.log(`Server running on https://localhost:${port}`);
+// });
 
 // Start the HTTPS server
-// https.createServer(options, app, port).listen(port, () => {
-// console.log(`Server running on https://localhost:${port}`);
-// });
+https.createServer(options, app, port).listen(port, () => {
+console.log(`Server running on https://localhost:${port}`);
+});

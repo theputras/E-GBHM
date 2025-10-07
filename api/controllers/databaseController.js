@@ -1,27 +1,33 @@
 // const mysql = require('mysql2');
 const { Pool } = require('pg');
 require('dotenv').config();
+const mysql = require('mysql2/promise');
+// const util = require('util'); // Biar bisa promisify
 
-// const db = mysql.createPool({
-//   host: process.env.DB_HOST,
-//   port: process.env.DB_PORT,
-//   user: process.env.DB_USER,
-//   password: process.env.DB_PASSWORD,
-//   database: process.env.DB_NAME,
-//   waitForConnections: true,
-//   connectionLimit: 10,
-//   queueLimit: 0
-// });
+const mysqldb = mysql.createPool({
+  host: process.env.MYSQL_HOST,
+  port: process.env.MYSQL_PORT,
+  user: process.env.MYSQL_USER,
+  password: process.env.MYSQL_PASSWORD,
+  database: process.env.MYSQL_DATABASE,
+  waitForConnections: true,
+  connectionLimit: 10,
+  queueLimit: 0
+});
 
-// db.getConnection((err, connection) => {
-//   if (err) {
-//     console.error('Database connection failed:', err.stack);
-//     return;
-//   }
-//   console.log('Connected to database.');
-//    connection.release(); // kembalikan ke pool
-// });
-// module.exports = db.promise(); // export sebagai promise pool
+// Cek koneksi awal (optional)
+(async () => {
+  try {
+    const conn = await mysqldb.getConnection();
+    console.log('Connected to MySQL database.');
+    conn.release();
+  } catch (err) {
+    console.error('Database connection failed:', err.stack);
+  }
+})();
+
+
+
 
 const db = new Pool({
   host: process.env.PGHOST,
@@ -37,5 +43,12 @@ const db = new Pool({
 db.connect()
   .then(() => console.log('Connected to PostgreSQL (Neon)'))
   .catch(err => console.error('Connection error:', err.stack));
+  
+  
+  
 
-module.exports = db;
+
+module.exports = {
+  mysqldb,
+  postgres: db // ganti nama supaya tidak bentrok
+};
